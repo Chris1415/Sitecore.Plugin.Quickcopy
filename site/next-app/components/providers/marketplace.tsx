@@ -15,6 +15,11 @@ import {
   useState,
 } from "react";
 
+import { clearAll, getEntry } from "@/lib/cache/store";
+import { buildCacheKey } from "@/lib/cache/types";
+import { requireContextId } from "@/lib/marketplace/require-context-id";
+import { prefetchPageUrls } from "@/lib/url-resolver/prefetch";
+
 interface ClientSDKProviderProps {
   children: ReactNode;
 }
@@ -168,6 +173,54 @@ export const MarketplaceProvider: React.FC<ClientSDKProviderProps> = ({
       client.destroy();
     };
   }, [client]);
+
+  // T014b — Pre-fetch URLs whenever the cache key changes. ADR-0006 calls for
+  // three parallel SDK queries on every `pageInfo.id`/`pageInfo.version`
+  // change; ADR-0007 keys the cache by `${id}:${version ?? 'noversion'}` so
+  // back-navigation hits the cache and version bumps automatically refresh.
+  // The click handlers in the action cards are synchronous cache reads — no
+  // fetch on click.
+  useEffect(() => {
+    if (!client || !appContext) return;
+    const pageId = pagesCtx?.pageInfo?.id;
+    const siteId = pagesCtx?.siteInfo?.id;
+    if (!pageId || !siteId) return;
+
+    const key = buildCacheKey(pageId, pagesCtx?.pageInfo?.version);
+    if (getEntry(key)) {
+      return; // cache hit; back-nav or dedupe under StrictMode double-mount
+    }
+
+    let contextId: string;
+    try {
+      contextId = requireContextId(appContext);
+    } catch (err) {
+      console.error("[quickcopy][prefetch] cannot resolve context id", err);
+      return;
+    }
+
+    const pageInfo = pagesCtx?.pageInfo ?? {};
+    const siteInfo = pagesCtx?.siteInfo ?? {};
+    void prefetchPageUrls(client, contextId, pageInfo, siteInfo);
+    // Intentional: re-run only when the cache key inputs change. Capturing
+    // the full `pagesCtx` object would re-fire on every re-render even when
+    // id/version/siteId are stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    client,
+    appContext,
+    pagesCtx?.pageInfo?.id,
+    pagesCtx?.pageInfo?.version,
+    pagesCtx?.siteInfo?.id,
+  ]);
+
+  // T015 — Drop all cache entries on Provider unmount (panel close / reload),
+  // satisfying FR-007 ("panel reload clears errors") and ADR-0007.
+  useEffect(() => {
+    return () => {
+      clearAll();
+    };
+  }, []);
 
   if (loading) {
     return (
