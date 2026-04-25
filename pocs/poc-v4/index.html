@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuickCopy POC v4 — Content-Forward Stack</title>
+
+  <!-- Geist Sans + Geist Mono ONLY (Blok Nova preset) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@300..900&family=Geist+Mono:wght@400..700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Demo controls (NOT part of the panel design) -->
+  <div class="demo-bar" role="region" aria-label="POC demo controls">
+    <span class="demo-bar__title">Demo</span>
+    <button id="demo-toggle-published" class="demo-bar__btn" type="button">
+      Toggle published
+    </button>
+    <button id="demo-force-error" class="demo-bar__btn" type="button">
+      Force error: Preview URL
+    </button>
+    <button id="demo-reset" class="demo-bar__btn" type="button">
+      Reset states
+    </button>
+    <span id="demo-status" class="demo-bar__status" aria-live="polite"></span>
+  </div>
+
+  <!-- Mocked Pages canvas backdrop -->
+  <main class="stage" aria-hidden="true">
+    <div class="stage__grid"></div>
+    <div class="stage__caption">Mocked Pages editor canvas — not interactive</div>
+  </main>
+
+  <!-- The QuickCopy panel (320px, pinned right) -->
+  <aside class="panel" role="complementary" aria-label="QuickCopy panel">
+    <!-- 1. Header strip -->
+    <header class="panel__header">
+      <span class="panel__wordmark">QuickCopy</span>
+      <button
+        id="theme-toggle"
+        type="button"
+        class="theme-pill"
+        aria-pressed="true"
+        aria-label="Toggle theme"
+      >
+        <span class="theme-pill__glyph" aria-hidden="true">&#9214;</span>
+        <span class="theme-pill__label">Dark</span>
+      </button>
+    </header>
+
+    <!-- 2. Page kicker -->
+    <section class="kicker">
+      <div class="kicker__eyebrow">EDITING</div>
+      <h2 class="kicker__title">Spring Campaign Landing Page</h2>
+      <div class="kicker__meta">Northwind Marketing &middot; en</div>
+    </section>
+
+    <!-- 3. Action rows -->
+    <ul class="rows" role="list">
+      <li>
+        <button
+          class="row"
+          type="button"
+          data-action="live"
+          aria-label="Copy Live URL"
+        >
+          <div class="row__head">
+            <span class="row__label">LIVE URL</span>
+            <span class="row__kbd" aria-hidden="true">L</span>
+          </div>
+          <div class="row__value" data-role="value">https://www.example.com/products/spring-campaign</div>
+        </button>
+      </li>
+      <li>
+        <button
+          class="row"
+          type="button"
+          data-action="preview"
+          aria-label="Copy Preview URL"
+        >
+          <div class="row__head">
+            <span class="row__label">PREVIEW URL</span>
+            <span class="row__kbd" aria-hidden="true">P</span>
+          </div>
+          <div class="row__value" data-role="value">https://preview.example.com/products/spring-campaign</div>
+        </button>
+      </li>
+      <li>
+        <button
+          class="row"
+          type="button"
+          data-action="item"
+          aria-label="Copy Item ID"
+        >
+          <div class="row__head">
+            <span class="row__label">ITEM ID</span>
+            <span class="row__kbd" aria-hidden="true">I</span>
+          </div>
+          <div class="row__value" data-role="value">8E5F4A3B-2C1D-4F9A-9B7E-1A2B3C4D5E6F</div>
+        </button>
+      </li>
+      <li>
+        <button
+          class="row"
+          type="button"
+          data-action="title"
+          aria-label="Copy Page Title"
+        >
+          <div class="row__head">
+            <span class="row__label">PAGE TITLE</span>
+            <span class="row__kbd" aria-hidden="true">T</span>
+          </div>
+          <div class="row__value" data-role="value">Spring Campaign Landing Page</div>
+        </button>
+      </li>
+    </ul>
+
+    <!-- 4. Share Link split-button row (ADR-0010) -->
+    <div class="share" data-action="share">
+      <button
+        type="button"
+        class="share__primary"
+        aria-label="Copy share link"
+      >
+        <span class="share__label">Share Link</span>
+        <span class="share__kbd" aria-hidden="true">S</span>
+        <span class="share__chip" id="share-format-chip">MD</span>
+      </button>
+      <button
+        type="button"
+        class="share__caret"
+        id="share-caret"
+        aria-haspopup="menu"
+        aria-expanded="false"
+        aria-controls="share-menu"
+        aria-label="Choose share link format"
+      >
+        <span aria-hidden="true">&#9662;</span>
+      </button>
+      <div
+        class="share__menu"
+        id="share-menu"
+        role="menu"
+        aria-label="Share link format"
+        hidden
+      >
+        <button
+          role="menuitem"
+          type="button"
+          class="share__menu-item"
+          data-format="md"
+        >
+          <span class="share__menu-name">Markdown</span>
+          <span class="share__menu-preview">[Title](url)</span>
+        </button>
+        <button
+          role="menuitem"
+          type="button"
+          class="share__menu-item"
+          data-format="plain"
+        >
+          <span class="share__menu-name">Plain text</span>
+          <span class="share__menu-preview">Title &mdash; url</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 5. Legend -->
+    <footer class="legend" aria-hidden="true">
+      <div class="legend__cell"><span class="legend__key">L</span><span class="legend__cap">URL</span></div>
+      <div class="legend__sep">&middot;</div>
+      <div class="legend__cell"><span class="legend__key">P</span><span class="legend__cap">PRV</span></div>
+      <div class="legend__sep">&middot;</div>
+      <div class="legend__cell"><span class="legend__key">I</span><span class="legend__cap">ID</span></div>
+      <div class="legend__sep">&middot;</div>
+      <div class="legend__cell"><span class="legend__key">T</span><span class="legend__cap">TTL</span></div>
+      <div class="legend__sep">&middot;</div>
+      <div class="legend__cell"><span class="legend__key">S</span><span class="legend__cap">SHR</span></div>
+    </footer>
+  </aside>
+
+  <!-- SR-only live region for copy / error announcements -->
+  <div id="sr-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <p class="page-caption">QuickCopy POC v4 &mdash; Content-Forward Stack (mocked Marketplace SDK; all state is local)</p>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

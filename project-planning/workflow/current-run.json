@@ -5,15 +5,26 @@
   "updated_at": "2026-04-25T00:00:00Z",
   "product_slug": "quickcopy",
   "product_root": "products/quickcopy",
-  "status": "spec_ready",
+  "status": "ui_ready",
   "prd_input_mode": "brain_dump_only",
   "platform_target": "marketplace",
   "task_breakdown_style": "standard",
   "ui_design": {
-    "proposal_count": 1,
-    "divergence": "subtle",
-    "variant_paths": [],
-    "selected_variant_path": null
+    "proposal_count": 4,
+    "divergence": "moderate",
+    "variant_paths": [
+      "products/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v1.md",
+      "products/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v2.md",
+      "products/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v3.md",
+      "products/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v4.md"
+    ],
+    "selected_variant_path": "products/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v2.md",
+    "selected_poc_path": "products/quickcopy/pocs/poc-v2",
+    "history": [
+      "First pair (v1 Compact Utilitarian / v2 Spacious & Expressive) rejected by stakeholder — too boring.",
+      "Second iteration: v1 redesigned as Page Card Hub (editorial), v2 redesigned as Spotlight Compass (geometric). v2 chosen as winning direction but requested strict-Blok refit (Geist Sans + Geist Mono, semantic tokens only).",
+      "Third iteration: v2 refit to strict Blok; v3 Action Wheel and v4 Content-Forward Stack added as alternative directions for final comparison."
+    ]
   },
   "source": {
     "kind": "raw_idea",
@@ -62,6 +73,22 @@
       "exited_at": "2026-04-25T00:00:00Z",
       "outcome": "completed",
       "error": null
+    },
+    {
+      "stage": "architecture_ready",
+      "agent": "04-software-architect",
+      "entered_at": "2026-04-25T00:30:00Z",
+      "exited_at": "2026-04-25T01:00:00Z",
+      "outcome": "completed",
+      "error": null
+    },
+    {
+      "stage": "ui_ready",
+      "agent": "05-ui-designer",
+      "entered_at": "2026-04-25T07:30:00Z",
+      "exited_at": "2026-04-25T15:30:00Z",
+      "outcome": "completed",
+      "error": null
     }
   ],
   "implementation": {
@@ -77,6 +104,10 @@
     "discovery: completed (rubber-ducky + PM)",
     "critical_review: partial — Round 1 delivered (Problem / Goals / Scope). Stakeholder accepted scope answers, declined Problem/Goals challenges as overkill for a dogfood app, declined Round 2 (User Stories / FRs). Scope answers folded into PRD: full 5-button scope unconditional, R-001 Live URL ships in v0.1, clipboard = local copy in QuickCopy with no pageshot refactor (ADR-0004).",
     "Backlog entry: storage/marketplace-app-ideas.md shortlist #1 (screenshot previously #2 moved to Shipped).",
-    "ADRs created: 0002 (extension point), 0003 (Blok UI), 0004 (clipboard local-copy strategy)."
+    "ADRs created during /create-prd: 0002 (extension point), 0003 (Blok UI), 0004 (clipboard local-copy).",
+    "planning_track: minimal — no architecture blueprint file written (canonical_artifacts.architecture stays null).",
+    "ADRs created during /architect (minimal track): 0005 (Marketplace Client-Side scaffold + pageshot mirror), 0006 (Live URL parallel pre-fetch composition), 0007 (version-keyed cache, no TTL), 0008 (Alt+L/P/I/T/S provisional shortcuts + Ctrl+Alt fallback), 0009 (persistent error state, no retry), 0010 (Share Link composed from Blok Button+DropdownMenu).",
+    "Open Questions resolved by architect: OQ-001 (shortcuts → ADR-0008), OQ-002 (split-button keyboard → ADR-0010), OQ-006 (cache invalidation → ADR-0007). OQ-003 / OQ-004 / OQ-005 / OQ-008 still open (UX writing / UI design / v0.2 deferral).",
+    "UI design selected: v2 Spotlight Compass (geometric / modern; asymmetric 2x2 grid + bottom Share Link strip; Blok-primary gradient mesh atmosphere). Strict-Blok refit verified: Geist Sans + Geist Mono only (Blok Nova preset), semantic tokens only (97 hsl(var(--token)) references in styles.css), zero raw hex, zero non-Blok fonts. POC at products/quickcopy/pocs/poc-v2/ is the canonical visual source of truth for implementation."
   ]
 }

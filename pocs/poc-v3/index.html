@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QuickCopy POC v3 — Action Wheel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..900&family=Geist+Mono:wght@400..700&display=swap" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <!-- Demo controls -->
+    <div class="demo-controls" role="group" aria-label="Demo controls">
+      <button type="button" id="toggle-published" class="demo-btn">Toggle published</button>
+      <button type="button" id="force-error" class="demo-btn">Force error: Preview URL</button>
+      <button type="button" id="reset-states" class="demo-btn">Reset states</button>
+    </div>
+
+    <!-- Mocked Pages canvas -->
+    <main class="canvas" aria-hidden="true">
+      <div class="canvas-grid"></div>
+      <div class="canvas-caption">Mocked Pages editor canvas — not interactive</div>
+    </main>
+
+    <!-- QuickCopy panel -->
+    <aside class="panel" aria-label="QuickCopy panel">
+      <header class="panel-header">
+        <span class="wordmark">QuickCopy</span>
+        <button type="button" id="theme-toggle" class="icon-btn" aria-label="Toggle theme">
+          <span class="theme-icon" aria-hidden="true">☾</span>
+        </button>
+      </header>
+
+      <section class="wheel" aria-label="Action wheel">
+        <div class="backdrop" aria-hidden="true"></div>
+
+        <!-- Hairlines (SVG, behind satellites) -->
+        <svg class="hairlines" viewBox="0 0 320 280" aria-hidden="true">
+          <line class="hairline" data-action="live"    x1="160" y1="140" x2="78"  y2="58"  />
+          <line class="hairline" data-action="preview" x1="160" y1="140" x2="242" y2="58"  />
+          <line class="hairline" data-action="item"    x1="160" y1="140" x2="78"  y2="222" />
+          <line class="hairline" data-action="title"   x1="160" y1="140" x2="242" y2="222" />
+        </svg>
+
+        <!-- Hub -->
+        <div class="hub" id="hub">
+          <div class="hub-title" id="hub-title">Spring Campaign Landing Page</div>
+          <div class="hub-site" id="hub-site">Northwind Marketing</div>
+        </div>
+
+        <!-- Satellites -->
+        <button type="button" class="sat sat-tl" data-action="live" aria-label="Copy Live URL — Alt+L">
+          <span class="sat-glyph" aria-hidden="true">↗</span>
+          <span class="sat-kbd kbd kbd-tl" aria-hidden="true">L</span>
+        </button>
+        <button type="button" class="sat sat-tr" data-action="preview" aria-label="Copy Preview URL — Alt+P">
+          <span class="sat-glyph" aria-hidden="true">◉</span>
+          <span class="sat-kbd kbd kbd-tr" aria-hidden="true">P</span>
+        </button>
+        <button type="button" class="sat sat-bl" data-action="item" aria-label="Copy Item ID — Alt+I">
+          <span class="sat-glyph" aria-hidden="true">#</span>
+          <span class="sat-kbd kbd kbd-bl" aria-hidden="true">I</span>
+        </button>
+        <button type="button" class="sat sat-br" data-action="title" aria-label="Copy Page Title — Alt+T">
+          <span class="sat-glyph" aria-hidden="true">Aa</span>
+          <span class="sat-kbd kbd kbd-br" aria-hidden="true">T</span>
+        </button>
+      </section>
+
+      <!-- Share Link hero (split button per ADR-0010) -->
+      <div class="share" role="group" aria-label="Share Link">
+        <button type="button" class="share-main" id="share-main" data-action="share" aria-label="Copy Share Link as Markdown — Alt+S">
+          <span class="share-glyph" aria-hidden="true">↑</span>
+          <span class="share-label" id="share-label">Share Link</span>
+        </button>
+        <button type="button" class="share-caret" id="share-caret" aria-haspopup="menu" aria-expanded="false" aria-label="Share Link options">
+          <span aria-hidden="true">▾</span>
+        </button>
+        <div class="share-menu" id="share-menu" role="menu" hidden>
+          <button type="button" role="menuitem" class="menu-item" data-format="markdown">Copy as Markdown</button>
+          <button type="button" role="menuitem" class="menu-item" data-format="plain">Copy as Plain text</button>
+        </div>
+      </div>
+
+      <!-- Shortcut legend -->
+      <ul class="legend" aria-label="Keyboard shortcuts">
+        <li><span class="kbd">L</span><span class="legend-label">Live</span></li>
+        <li><span class="kbd">P</span><span class="legend-label">Preview</span></li>
+        <li><span class="kbd">I</span><span class="legend-label">Item</span></li>
+        <li><span class="kbd">T</span><span class="legend-label">Title</span></li>
+        <li><span class="kbd">S</span><span class="legend-label">Share</span></li>
+      </ul>
+    </aside>
+
+    <!-- Tooltip layer (single instance, repositioned) -->
+    <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+
+    <!-- Live region for announcements -->
+    <div class="sr-only" aria-live="polite" id="live-region"></div>
+
+    <p class="footer-caption">QuickCopy POC v3 — Action Wheel (mocked Marketplace SDK; all state is local)</p>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -74,12 +74,14 @@ Ship a Marketplace Page Context Panel app that puts Live URL, Preview URL, Item 
 
 ## Key constraints & assumptions
 
-- **Scaffold pattern follows `products/pageshot/`** — Marketplace App, NOT Content SDK / head-app. Read pageshot before locking the scaffold (architect step). (ADR-0001 generic decisioning principle; ADR-0002 extension point; ADR-0003 UI framework.)
+- **Scaffold = Marketplace Client-Side (Scaffold 2), nested `next-app/`, mirror pageshot.** Run `npx shadcn@latest add … quickstart-with-client-side-xmc.json` against `products/quickcopy/site`. Apply the P-019 lint nits + P-027 Nova Badge API patches + Vitest stack + Chrome PNA headers immediately after scaffold. **Mode A only** — portal-brokered auth, no Auth0, no mkcert, HTTP dev loop. (ADR-0005; companions: ADR-0001 ADR-backbone, ADR-0002 extension point, ADR-0003 Blok UI.)
 - **Clipboard duplication is intentional** for v0.1 — local copy of pageshot's pattern. Cross-product consolidation deferred until rule-of-three (ADR-0004).
-- **Live URL composition complexity** is absorbed inside v0.1 scope — there is no fallback plan to defer Live URL. Architect commits the call graph in an ADR.
-- **Cache key:** `pageInfo.id` plus `pageInfo.version` if Pages exposes version on publish; else short-TTL on `/live` status. Architect decides (R-007).
-- **Keyboard shortcut scheme** is `Alt+L/P/I/T/S` unless conflict check forces a change — that change is documented as an ADR.
-- **Single tenant** per install (panel runs in `xmc:pages:contextpanel`, not standalone) — no multi-tenant logic in v0.1.
+- **Live URL composition** = parallel pre-fetch on `pageInfo.id` change. Three calls fire in parallel via `Promise.allSettled`: `xmc.agent.pagesGetPagePreviewUrl`, the live-status equivalent, and `xmc.sites.listHosts`. Results land in an in-memory `Map<cacheKey, PageDerivedState>`. Click handlers are synchronous cache reads — no fetch on click. Live URL composed eagerly via `new URL(slug, host).toString()` when status=published AND host is a string. (ADR-0006.)
+- **Cache key = `${pageInfo.id}:${pageInfo.version ?? 'noversion'}`.** No TTL, no manual refresh affordance. Version bump after publish triggers automatic re-fetch and clears sticky error state. (ADR-0007 — supersedes the "or short-TTL" hedge in PRD R-007.)
+- **Error state = persistent per-button, no auto-retry, no backoff, no retry button.** Failed pre-fetches and clipboard writes mark the cache slot as `Error`; button enters error state until cache key changes (id or version). `aria-disabled="true"` (focusable for tooltip), red accent + ❌ icon + tooltip per US wording. `console.error` logs failures in dev only. The other four buttons keep working independently. (ADR-0009.)
+- **Keyboard shortcuts** = `Alt+L/P/I/T/S` provisional, named fallback `Ctrl+Alt+<letter>` if QA finds a conflict. Iframe-scoped listeners, suppressed when an editable element has focus, `event.preventDefault()` on every recognized combo. `Alt+S` triggers Share Link default format (Markdown), NOT the dropdown. Legend uses Blok `Kbd`. (ADR-0008.)
+- **Share Link split-button** = composed from Blok `Button` + Blok `DropdownMenu` (Blok ships no native split-button primitive). Two real buttons in a `role="group"` wrapper — primary is Markdown action, caret IconButton with `aria-haspopup="menu"` opens the dropdown. Disabled / error states sync across both zones. Format strings exact per FR-005 (em-dash U+2014 with single space either side for plain text). (ADR-0010.)
+- **Single tenant** per install (panel runs in `xmc:pages:contextpanel`, not standalone) — no multi-tenant logic in v0.1. `application.context.resourceAccess[]` has exactly one entry; use `requireContextId()` typed helper to read `resourceAccess[0].context.live` — never `as string` casts.
 
 ## Handoff
 

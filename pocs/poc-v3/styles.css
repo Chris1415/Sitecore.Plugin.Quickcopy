@@ -1,0 +1,446 @@
+/* QuickCopy POC v3 — Action Wheel
+   Strict Blok adherence: Geist Sans + Geist Mono only, semantic tokens only.
+   No raw hex outside :root token definitions (HSL triplets per Blok convention).
+*/
+
+/* ---------- Blok semantic tokens (Nova preset values) ---------- */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 0 0% 100%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
+}
+
+html.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 62.8% 50.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --ring: 217.2 91.2% 59.8%;
+}
+
+/* ---------- Reset & base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  font-family: 'Geist', system-ui, sans-serif;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- Page layout ---------- */
+.page {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "controls controls"
+    "canvas   panel"
+    "footer   footer";
+  gap: 0;
+}
+
+.demo-controls {
+  grid-area: controls;
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+}
+
+.demo-btn {
+  font-family: 'Geist', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  transition: background 120ms ease;
+}
+.demo-btn:hover { background: hsl(var(--accent)); }
+
+/* ---------- Canvas (mocked Pages) ---------- */
+.canvas {
+  grid-area: canvas;
+  position: relative;
+  background: hsl(var(--muted));
+  overflow: hidden;
+}
+.canvas-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(hsl(var(--border) / 0.6) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border) / 0.6) 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.5;
+}
+.canvas-caption {
+  position: absolute; bottom: 12px; left: 16px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: 0.04em;
+}
+
+.footer-caption {
+  grid-area: footer;
+  margin: 0;
+  padding: 10px 16px;
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+  border-top: 1px solid hsl(var(--border));
+  text-align: center;
+}
+
+/* ---------- Panel ---------- */
+.panel {
+  grid-area: panel;
+  width: 320px;
+  background: hsl(var(--background));
+  border-left: 1px solid hsl(var(--border));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.wordmark {
+  font-family: 'Geist', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.icon-btn {
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  color: hsl(var(--foreground));
+  font-size: 13px;
+}
+.icon-btn:hover { background: hsl(var(--accent)); }
+
+/* ---------- Wheel ---------- */
+.wheel {
+  position: relative;
+  width: 320px;
+  height: 280px;
+  flex-shrink: 0;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, hsl(var(--primary) / 0.16) 0%, hsl(var(--primary) / 0.06) 35%, transparent 70%);
+  pointer-events: none;
+}
+
+.hairlines {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.hairline {
+  stroke: hsl(var(--border));
+  stroke-width: 1;
+  transition: stroke 200ms ease, stroke-dasharray 200ms ease;
+}
+.hairline.is-disabled { stroke-dasharray: 4 4; stroke: hsl(var(--muted-foreground)); }
+.hairline.is-error    { stroke: hsl(var(--destructive)); stroke-dasharray: 4 4; }
+.hairline.is-active   { stroke: hsl(var(--primary)); }
+
+/* Hub */
+.hub {
+  position: absolute;
+  left: 50%; top: 140px;
+  transform: translate(-50%, -50%);
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: hsl(var(--background));
+  border: 1.5px solid hsl(var(--border));
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 0 14px;
+  text-align: center;
+  z-index: 2;
+  box-shadow: 0 0 0 6px hsl(var(--background));
+}
+.hub-title {
+  font-family: 'Geist', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.2;
+  color: hsl(var(--foreground));
+  max-width: 112px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: font-size 120ms ease;
+}
+.hub-title.shrink { font-size: 13px; }
+.hub-title.tiny   { font-size: 11px; }
+.hub-title.mono   { font-family: 'Geist Mono', monospace; font-weight: 500; font-size: 11px; }
+.hub-site {
+  margin-top: 6px;
+  font-family: 'Geist Mono', monospace;
+  font-weight: 500;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+.hub.is-error .hub-title { color: hsl(var(--destructive)); }
+
+/* Satellites */
+.sat {
+  position: absolute;
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--primary));
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  z-index: 3;
+  transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 180ms ease, border-color 180ms ease, border-style 180ms ease;
+}
+/* Satellite positions: centers at (78,58), (242,58), (78,222), (242,222) */
+.sat-tl { left: 46px;  top: 26px; }
+.sat-tr { left: 210px; top: 26px; }
+.sat-bl { left: 46px;  top: 190px; }
+.sat-br { left: 210px; top: 190px; }
+
+.sat-glyph {
+  font-family: 'Geist', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: hsl(var(--primary));
+  transition: color 180ms ease;
+}
+
+.sat:hover, .sat:focus-visible {
+  transform: scale(1.1);
+  background: hsl(var(--primary) / 0.12);
+}
+.sat:active { transform: scale(0.96); }
+
+.sat.is-disabled {
+  border-style: dashed;
+  cursor: not-allowed;
+}
+.sat.is-disabled .sat-glyph { color: hsl(var(--muted-foreground)); }
+.sat.is-disabled:hover { transform: none; background: hsl(var(--background)); }
+
+.sat.is-error {
+  border-color: hsl(var(--destructive));
+}
+.sat.is-error .sat-glyph { color: hsl(var(--destructive)); }
+.sat.is-error:hover { background: hsl(var(--destructive) / 0.12); }
+
+.sat.is-copied {
+  animation: pulse 250ms ease;
+}
+.sat.is-copied .sat-glyph { color: hsl(var(--primary)); }
+
+@keyframes pulse {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+/* Kbd chip */
+.kbd {
+  font-family: 'Geist Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 6px;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  line-height: 1;
+  display: inline-block;
+}
+.sat-kbd {
+  position: absolute;
+  font-size: 9px;
+  padding: 1px 5px;
+  pointer-events: none;
+}
+.kbd-tl { top: -6px;  left: -6px; }
+.kbd-tr { top: -6px;  right: -6px; }
+.kbd-bl { bottom: -6px; left: -6px; }
+.kbd-br { bottom: -6px; right: -6px; }
+
+/* ---------- Share Link hero ---------- */
+.share {
+  position: relative;
+  margin: 4px 16px 12px;
+  display: flex;
+  height: 56px;
+  border-radius: 10px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  transition: box-shadow 200ms ease;
+  flex-shrink: 0;
+}
+.share:hover {
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.18);
+}
+
+.share-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  color: hsl(var(--primary-foreground));
+  border-radius: 10px 0 0 10px;
+}
+.share-glyph {
+  font-size: 18px;
+  font-weight: 600;
+  font-family: 'Geist', sans-serif;
+}
+.share-label {
+  font-family: 'Geist', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.share-caret {
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid hsl(var(--primary-foreground) / 0.3);
+  color: hsl(var(--primary-foreground));
+  border-radius: 0 10px 10px 0;
+  font-size: 12px;
+}
+
+.share.is-copied { animation: pulse 250ms ease; }
+
+.share-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 200px;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  box-shadow: 0 6px 18px hsl(var(--foreground) / 0.12);
+  padding: 4px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+.menu-item {
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  color: hsl(var(--foreground));
+}
+.menu-item:hover, .menu-item:focus-visible {
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--foreground));
+  outline: none;
+}
+
+/* ---------- Legend ---------- */
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 8px 16px 12px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  border-top: 1px solid hsl(var(--border));
+  flex-shrink: 0;
+}
+.legend li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.legend-label {
+  font-family: 'Geist', sans-serif;
+  font-size: 10px;
+  color: hsl(var(--muted-foreground));
+}
+
+/* ---------- Tooltip ---------- */
+.tooltip {
+  position: fixed;
+  z-index: 20;
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  font-family: 'Geist', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+  max-width: 220px;
+  pointer-events: none;
+  box-shadow: 0 4px 12px hsl(var(--foreground) / 0.18);
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .sat, .share, .hairline, .hub-title { transition: none; }
+  .sat.is-copied, .share.is-copied { animation: none; opacity: 0.92; }
+  .sat:hover, .sat:focus-visible { transform: none; }
+}
