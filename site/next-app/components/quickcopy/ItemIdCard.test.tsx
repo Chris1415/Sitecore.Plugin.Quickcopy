@@ -13,7 +13,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const clipboardMock = vi.hoisted(() => ({
-  copyTextToClipboard: vi.fn(async (_t: string) => undefined),
+  copyTextToClipboard: vi.fn<(t: string) => Promise<void>>().mockResolvedValue(undefined),
 }));
 vi.mock("@/lib/clipboard", () => clipboardMock);
 

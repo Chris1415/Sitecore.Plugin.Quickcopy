@@ -26,7 +26,7 @@
  *  - `prefers-reduced-motion: reduce` strips the rotation/scale morph class.
  */
 
-import { useEffect, useId, useState } from "react";
+import { useId, useSyncExternalStore } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -44,19 +44,22 @@ export interface ActionCardProps {
 }
 
 function usePrefersReducedMotion(): boolean {
-  const [prefers, setPrefers] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefers(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setPrefers(e.matches);
-    if (mq.addEventListener) {
-      mq.addEventListener("change", handler);
-      return () => mq.removeEventListener("change", handler);
-    }
-    return undefined;
-  }, []);
-  return prefers;
+  // `useSyncExternalStore`-shaped subscribe pattern avoids the
+  // "setState in effect" lint warning while remaining SSR-safe (the
+  // server snapshot is `false`).
+  return useSyncExternalStore(
+    (onChange) => {
+      if (typeof window === "undefined" || !window.matchMedia) return () => {};
+      const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+      mq.addEventListener?.("change", onChange);
+      return () => mq.removeEventListener?.("change", onChange);
+    },
+    () =>
+      typeof window !== "undefined" &&
+      !!window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => false,
+  );
 }
 
 export function ActionCard(props: ActionCardProps) {
