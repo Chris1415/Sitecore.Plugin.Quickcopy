@@ -5,10 +5,10 @@
   "updated_at": "2026-04-25T00:00:00Z",
   "product_slug": "quickcopy",
   "product_root": "products/quickcopy",
-  "status": "ui_ready",
+  "status": "qa_ready",
   "prd_input_mode": "brain_dump_only",
   "platform_target": "marketplace",
-  "task_breakdown_style": "standard",
+  "task_breakdown_style": "tdd",
   "ui_design": {
     "proposal_count": 4,
     "divergence": "moderate",
@@ -87,6 +87,22 @@
       "agent": "05-ui-designer",
       "entered_at": "2026-04-25T07:30:00Z",
       "exited_at": "2026-04-25T15:30:00Z",
+      "outcome": "completed",
+      "error": null
+    },
+    {
+      "stage": "plan_ready",
+      "agent": "06-lead-developer",
+      "entered_at": "2026-04-25T16:00:00Z",
+      "exited_at": "2026-04-25T16:10:00Z",
+      "outcome": "completed",
+      "error": null
+    },
+    {
+      "stage": "qa_ready",
+      "agent": "07-qa-specialist",
+      "entered_at": "2026-04-25T16:10:00Z",
+      "exited_at": "2026-04-25T16:30:00Z",
       "outcome": "completed",
       "error": null
     }
