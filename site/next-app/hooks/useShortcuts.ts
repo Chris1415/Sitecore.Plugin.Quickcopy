@@ -34,7 +34,7 @@
  * (per ADR-0010 + § 4c-1). The hook is intentionally agnostic of menu state.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 import {
   SHORTCUTS,
@@ -42,6 +42,15 @@ import {
 } from "@/lib/shortcuts/config";
 
 export type ShortcutHandlers = Record<ShortcutId, () => void>;
+
+/**
+ * Use the layout-effect variant on the client and fall back to a no-op on
+ * the server so SSR doesn't try to invoke a layout hook. This keeps the
+ * "store latest handlers in a ref before paint" pattern correct AND
+ * SSR-safe.
+ */
+const useIsoLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 function isEditableTarget(): boolean {
   if (typeof document === "undefined") return false;
@@ -59,7 +68,12 @@ function isEditableTarget(): boolean {
 
 export function useShortcuts(handlers: ShortcutHandlers): void {
   const handlersRef = useRef<ShortcutHandlers>(handlers);
-  handlersRef.current = handlers;
+
+  // Update the ref BEFORE paint so the listener always sees the latest
+  // handlers without re-attaching on every render.
+  useIsoLayoutEffect(() => {
+    handlersRef.current = handlers;
+  }, [handlers]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

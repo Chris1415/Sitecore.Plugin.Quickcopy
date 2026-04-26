@@ -61,22 +61,15 @@ export interface UseThemeResult {
 }
 
 export function useTheme(): UseThemeResult {
-  // SSR-safe initial value; the effect below corrects to the stored value on
-  // the client. We intentionally avoid `useSyncExternalStore` here because
-  // the localStorage value is a one-time read, not a subscription target.
+  // Lazy initializer reads localStorage on the first client render
+  // (jsdom + browser). Server renders use the default — that's fine because
+  // the panel runs inside an iframe where the SSR/client mismatch is bound
+  // to the iframe's load anyway.
   const [theme, setTheme] = useState<Theme>(() => readStoredTheme());
 
-  // Re-read stored value on mount and apply the class. This handles the SSR
-  // path where the server renders with the default but the client may need
-  // 'light'.
-  useEffect(() => {
-    const stored = readStoredTheme();
-    setTheme(stored);
-    applyTheme(stored);
-  }, []);
-
-  // Whenever `theme` changes (after toggle()), keep the class in sync. The
-  // mount effect above also runs once but writes the same value — idempotent.
+  // Sync `<html class="dark">` whenever theme changes (initial mount + every
+  // toggle). This is the legitimate "synchronize state with an external
+  // system" case `useEffect` is designed for.
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
