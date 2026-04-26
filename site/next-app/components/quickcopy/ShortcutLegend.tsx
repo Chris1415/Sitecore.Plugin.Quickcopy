@@ -27,17 +27,20 @@ export function ShortcutLegend(props: ShortcutLegendProps) {
       role="list"
       aria-label="Keyboard shortcuts"
       className={cn(
-        "flex items-center justify-between gap-1.5 px-2 pt-2.5 mt-3",
+        // mt-4 + pt-3 (16px gap, 12px inner) — matches the increased panel
+        // padding and gives the chip row room without colliding with the
+        // share strip rounded edge.
+        "mt-4 flex items-center justify-between gap-1 px-1 pt-3",
         "border-t border-border",
         "font-sans text-[10px] text-muted-foreground",
         props.className,
       )}
     >
-      {SHORTCUTS.map((binding, index) => (
+      {SHORTCUTS.map((binding) => (
         <li
           key={binding.id}
           data-testid="shortcut-legend-chip"
-          className="flex flex-1 items-center justify-center gap-1.5"
+          className="flex flex-1 flex-col items-center gap-1"
         >
           <kbd
             className={cn(
@@ -55,11 +58,6 @@ export function ShortcutLegend(props: ShortcutLegendProps) {
           >
             {binding.label}
           </span>
-          {index < SHORTCUTS.length - 1 ? (
-            <span aria-hidden="true" className="text-[10px] opacity-50 ml-1.5">
-              ·
-            </span>
-          ) : null}
         </li>
       ))}
     </ul>
