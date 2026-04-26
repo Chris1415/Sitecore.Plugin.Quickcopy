@@ -5,7 +5,7 @@
   "updated_at": "2026-04-25T00:00:00Z",
   "product_slug": "quickcopy",
   "product_root": "products/quickcopy",
-  "status": "tested",
+  "status": "documented",
   "prd_input_mode": "brain_dump_only",
   "platform_target": "marketplace",
   "task_breakdown_style": "tdd",
@@ -129,6 +129,14 @@
       "agent": "07-qa-specialist",
       "entered_at": "2026-04-26T01:30:00Z",
       "exited_at": "2026-04-26T03:00:00Z",
+      "outcome": "completed",
+      "error": null
+    },
+    {
+      "stage": "documented",
+      "agent": "09-doc-writer",
+      "entered_at": "2026-04-26T03:00:00Z",
+      "exited_at": "2026-04-26T03:30:00Z",
       "outcome": "completed",
       "error": null
     }
