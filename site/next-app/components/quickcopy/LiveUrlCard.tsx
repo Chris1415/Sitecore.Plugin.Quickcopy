@@ -9,7 +9,11 @@
  * Reads the cache slot for the current `pages.context` page and renders the
  * appropriate `<ActionCard>` state:
  *  - all slots null              → disabled + "Loading…" tooltip
- *  - any of `previewUrl` / `publishing` / `liveHost` is `{error}` → persistent error
+ *  - any of `publishing` / `liveHost` is `{error}` → persistent error
+ *    (`previewUrl` is intentionally NOT a Live URL dependency — per ADR-0006
+ *    each slot is independent, so a Preview URL fetch failure must not
+ *    cascade into the Live URL card. Only the live composition inputs
+ *    `publishing` and `liveHost` count.)
  *  - `publishing.isPublished===false`  → disabled + "Not published…" tooltip
  *  - `liveUrl` is a string                → idle, click copies it
  *
@@ -53,11 +57,10 @@ export function LiveUrlCard() {
   if (!state) {
     cardState = "disabled";
     tooltip = TOOLTIP_LOADING;
-  } else if (
-    isError(state.previewUrl) ||
-    isError(state.publishing) ||
-    isError(state.liveHost)
-  ) {
+  } else if (isError(state.publishing) || isError(state.liveHost)) {
+    // Live URL composition depends only on `publishing` + `liveHost` per
+    // ADR-0006. A `previewUrl` error must NOT cascade — each slot is
+    // independent. (Polish micro-run: removed `previewUrl` from this branch.)
     cardState = "error";
     tooltip = TOOLTIP_ERROR;
   } else if (
