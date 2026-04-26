@@ -206,10 +206,12 @@ export function ShareLinkSplit() {
   );
 
   const primaryLabel = mode === "copied" ? "Copied" : "Share Link";
-  const primaryAriaLabel =
-    mode === "copied"
-      ? "Copied"
-      : "Copy Share Link as Markdown — shortcut Alt+S";
+  // aria-label is stable across the `copied` morph window so the panel-level
+  // `Alt+S` shortcut (which dispatches a synthetic click via aria-label
+  // substring match) keeps working even while the visible label flips to
+  // "Copied" for the 1500ms hold. Mirrors the ActionCard pattern, which
+  // never re-renders its aria-label.
+  const primaryAriaLabel = "Copy Share Link as Markdown — shortcut Alt+S";
 
   return (
     <div

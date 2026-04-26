@@ -347,4 +347,39 @@ describe("<ShareLinkSplit /> (T025)", () => {
     });
     expect(screen.queryByText(/Copied/)).toBeNull();
   });
+
+  it("primary aria-label is stable across the 'Copied' morph window (Alt+S keeps working)", async () => {
+    // Regression: prior to the code-review fix the primary's aria-label
+    // flipped to "Copied" during the 1500ms hold. The panel-level Alt+S
+    // shortcut dispatches a synthetic click via aria-label substring match
+    // ("shortcut Alt+S"), so a flipped label silently broke Alt+S during
+    // the morph window. Pin the aria-label as state-invariant.
+    vi.useFakeTimers();
+    setup({
+      pageTitle: "Title",
+      cacheState: {
+        liveUrl: "https://live",
+        publishing: { isPublished: true },
+        liveHost: "https://live",
+        previewUrl: "https://preview",
+      },
+    });
+    render(<ShareLinkSplit />);
+    const primary = document.querySelector(
+      '[data-quickcopy="share-link-primary"]',
+    ) as HTMLButtonElement;
+    const idleAriaLabel = primary.getAttribute("aria-label");
+    expect(idleAriaLabel).toMatch(/shortcut Alt\+S/);
+
+    await act(async () => {
+      fireEvent.click(primary);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Visible label flipped to "Copied"…
+    expect(screen.getByText(/Copied/)).toBeInTheDocument();
+    // …but aria-label stayed identical so Alt+S can still find the button.
+    expect(primary.getAttribute("aria-label")).toBe(idleAriaLabel);
+  });
 });
