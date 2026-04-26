@@ -2,6 +2,22 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/*
+ * T026 — Blok semantic-token palette.
+ *
+ * The Blok scaffold ships the canonical token map for `:root` (light) and
+ * `.dark` (dark) below. Every QuickCopy component references these tokens via
+ * `hsl(var(--token))` or `hsl(var(--token) / <alpha>)` so theme switching is
+ * a single class flip on `<html>`. Per ADR-0003 / § 4c-4: no raw hex anywhere
+ * outside the `:root` / `.dark` token blocks. T033's regression audit greps
+ * for `#[0-9a-fA-F]{3,8}` in `app/`, `components/`, `hooks/`, `lib/` excluding
+ * `globals.css` and asserts zero matches.
+ *
+ * Verified tokens used by Phase 2 components:
+ *   --primary, --primary-foreground, --background, --foreground,
+ *   --muted, --muted-foreground, --accent, --accent-foreground,
+ *   --destructive, --destructive-foreground, --border, --ring.
+ */
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -647,8 +663,15 @@
     }
   body {
     @apply bg-background text-foreground;
+    transition: background-color 180ms ease, color 180ms ease;
     }
   html {
     @apply font-sans;
     }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
 }
