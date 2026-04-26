@@ -84,10 +84,15 @@ export function useShortcuts(handlers: ShortcutHandlers): void {
       // the keystroke.
       if (isEditableTarget()) return;
 
-      // Required modifiers: Alt only — no Ctrl, no Meta.
+      // Required modifiers: Alt only — no Ctrl, no Meta, no Shift.
+      // ADR-0008 § 4 explicitly enumerates all four modifier flags. The
+      // Shift guard is what makes `Shift+Alt+L` (and the rest of the family)
+      // fall through to the surrounding accelerators / browser defaults
+      // instead of triggering our copy actions.
       if (!event.altKey) return;
       if (event.ctrlKey) return;
       if (event.metaKey) return;
+      if (event.shiftKey) return;
 
       const key = event.key.toLowerCase();
       const binding = SHORTCUTS.find((b) => b.keyLower === key);

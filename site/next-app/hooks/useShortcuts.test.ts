@@ -152,6 +152,34 @@ describe("useShortcuts", () => {
     expect(handlers.live).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["l", "live"],
+    ["p", "preview"],
+    ["i", "item"],
+    ["t", "title"],
+    ["s", "share"],
+  ] as const)(
+    "Shift+Alt+%s does NOT fire (modifier collision suppression per ADR-0008)",
+    (key, handlerId) => {
+      const handlers = makeHandlers();
+      renderHook(() => useShortcuts(handlers));
+      const event = new KeyboardEvent("keydown", {
+        key,
+        altKey: true,
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      });
+      const pd = vi.spyOn(event, "preventDefault");
+      window.dispatchEvent(event);
+      // None of the handlers must fire — Shift+Alt+X is "not our combo."
+      Object.values(handlers).forEach((h) => expect(h).not.toHaveBeenCalled());
+      // And the event must NOT be captured — we leave Shift+Alt+X for the
+      // surrounding accelerators / browser defaults.
+      expect(pd, `Shift+Alt+${key} should not preventDefault (handler ${handlerId})`).not.toHaveBeenCalled();
+    },
+  );
+
   it("Alt+X does nothing AND does NOT preventDefault", () => {
     const handlers = makeHandlers();
     renderHook(() => useShortcuts(handlers));
