@@ -172,15 +172,38 @@ describe("regression audit (T033)", () => {
     ).toEqual([]);
   });
 
-  it("aria-live appears only inside StatusLiveRegion.tsx within components/quickcopy/ code", () => {
+  it("aria-live appears only inside StatusLiveRegion.tsx (errors are visual-only per ADR-0009)", () => {
+    // Walk both `components/quickcopy/` AND `components/providers/` so a
+    // future error-aria-live regression in the providers folder cannot slip
+    // through. ADR-0009 mandates errors are visual-only — there must be no
+    // error-state aria-live region anywhere in production code.
+    //
+    // Tightly-scoped allow-list:
+    //  - `components/quickcopy/StatusLiveRegion.tsx` — the success-only
+    //    aria-live region (sr-only "Copied" announcements). This is THE
+    //    single sanctioned aria-live in the app. Comment in
+    //    `StatusLiveRegion.tsx` documents why.
+    //  - `components/providers/marketplace.tsx` — the loading-status banner
+    //    ("Connecting to Sitecore Marketplace…") uses `role="status"` +
+    //    `aria-live="polite"`. WAI-ARIA: this is a status announcement,
+    //    NOT an error announcement, and `role="status"` carries an implicit
+    //    `aria-live="polite"` — declaring it explicitly is the recommended
+    //    practice for SR consistency. ADR-0009 only forbids error-state
+    //    aria-live, so this loading status is allowed. The dedicated
+    //    error branch in the same file (`role="alert"`) intentionally
+    //    omits aria-live.
+    const ALLOWED_ARIA_LIVE = new Set([
+      "components/quickcopy/StatusLiveRegion.tsx",
+      "components/providers/marketplace.tsx",
+    ]);
     const files = collectFiles({
-      roots: ["components/quickcopy"],
+      roots: ["components/quickcopy", "components/providers"],
       excludeEndings: [".test.ts", ".test.tsx"],
       extensions: [".ts", ".tsx"],
     });
     const hits: string[] = [];
     for (const f of files) {
-      if (f.endsWith("StatusLiveRegion.tsx")) continue;
+      if (ALLOWED_ARIA_LIVE.has(f)) continue;
       const src = stripComments(read(f));
       if (/aria-live/i.test(src)) hits.push(f);
     }
