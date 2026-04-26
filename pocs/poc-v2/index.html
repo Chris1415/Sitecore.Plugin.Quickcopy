@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QuickCopy POC v2 — Spotlight Compass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..900&family=Geist+Mono:wght@400..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Demo controls (mocked Marketplace SDK harness) -->
+  <header class="demo-bar" role="toolbar" aria-label="POC demo controls">
+    <span class="demo-bar__title">QuickCopy POC v2 — demo controls</span>
+    <button type="button" id="demo-toggle-published" class="demo-bar__btn">Toggle published state</button>
+    <button type="button" id="demo-force-error" class="demo-bar__btn">Force error: Preview URL</button>
+    <button type="button" id="demo-reset" class="demo-bar__btn">Reset states</button>
+    <span class="demo-bar__status" id="demo-status">Published · No forced errors</span>
+  </header>
+
+  <!-- Mocked Pages canvas backdrop -->
+  <main class="stage" aria-hidden="true">
+    <div class="stage__canvas">
+      <div class="stage__grid"></div>
+      <div class="stage__caption">Mocked Pages editor canvas — not interactive</div>
+    </div>
+
+    <!-- The QuickCopy panel, pinned right -->
+    <aside class="panel" aria-hidden="false" aria-label="QuickCopy">
+      <!-- Atmospheric layers -->
+      <div class="panel__mesh" aria-hidden="true"></div>
+      <svg class="panel__grain" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+        <filter id="qc-grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/></filter>
+        <rect width="100%" height="100%" filter="url(#qc-grain)" />
+      </svg>
+
+      <!-- Slim header -->
+      <div class="panel__header">
+        <span class="wordmark">QUICKCOPY</span>
+        <button type="button" id="theme-toggle" class="theme-pill" aria-pressed="true" aria-label="Toggle theme">
+          <span class="theme-pill__glyph" aria-hidden="true">⏾</span>
+          <span class="theme-pill__label">Dark</span>
+        </button>
+      </div>
+
+      <!-- Kicker -->
+      <div class="kicker">
+        <span class="kicker__title">Spring Campaign Landing Page</span>
+        <span class="kicker__sep" aria-hidden="true">·</span>
+        <span class="kicker__site">Northwind Marketing</span>
+      </div>
+
+      <!-- 2x2 grid of action cards -->
+      <div class="grid" role="group" aria-label="Quick copy actions">
+        <button type="button" class="card" data-action="live" aria-label="Copy Live URL — shortcut Alt+L">
+          <span class="card__kbd"><kbd>L</kbd></span>
+          <span class="card__glyph" aria-hidden="true">↗</span>
+          <span class="card__label">Live URL</span>
+        </button>
+        <button type="button" class="card" data-action="preview" aria-label="Copy Preview URL — shortcut Alt+P">
+          <span class="card__kbd"><kbd>P</kbd></span>
+          <span class="card__glyph" aria-hidden="true">◉</span>
+          <span class="card__label">Preview URL</span>
+        </button>
+        <button type="button" class="card" data-action="item" aria-label="Copy Item ID — shortcut Alt+I">
+          <span class="card__kbd"><kbd>I</kbd></span>
+          <span class="card__glyph" aria-hidden="true">#</span>
+          <span class="card__label">Item ID</span>
+        </button>
+        <button type="button" class="card" data-action="title" aria-label="Copy Page Title — shortcut Alt+T">
+          <span class="card__kbd"><kbd>T</kbd></span>
+          <span class="card__glyph" aria-hidden="true">Aa</span>
+          <span class="card__label">Page Title</span>
+        </button>
+      </div>
+
+      <!-- Share Link strip (split button) -->
+      <div class="share" role="group" aria-label="Share Link">
+        <button type="button" class="share__primary" data-action="share-md" aria-label="Copy Share Link as Markdown — shortcut Alt+S">
+          <span class="share__glyph" aria-hidden="true">↑</span>
+          <span class="share__label">Share Link</span>
+          <span class="share__kbd"><kbd>S</kbd></span>
+        </button>
+        <button type="button" class="share__caret" id="share-caret" aria-haspopup="menu" aria-expanded="false" aria-label="Choose share-link format">
+          <span aria-hidden="true">⌄</span>
+        </button>
+        <div class="share__menu" id="share-menu" role="menu" hidden>
+          <button type="button" role="menuitemradio" aria-checked="true" data-action="share-md" class="share__menu-item">Copy as Markdown</button>
+          <button type="button" role="menuitemradio" aria-checked="false" data-action="share-plain" class="share__menu-item">Copy as Plain text</button>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend" aria-hidden="true">
+        <span class="legend__cell"><kbd>Alt+L</kbd><span>Live</span></span>
+        <span class="legend__dot">·</span>
+        <span class="legend__cell"><kbd>Alt+P</kbd><span>Preview</span></span>
+        <span class="legend__dot">·</span>
+        <span class="legend__cell"><kbd>Alt+I</kbd><span>Item</span></span>
+        <span class="legend__dot">·</span>
+        <span class="legend__cell"><kbd>Alt+T</kbd><span>Title</span></span>
+        <span class="legend__dot">·</span>
+        <span class="legend__cell"><kbd>Alt+S</kbd><span>Share</span></span>
+      </div>
+
+      <!-- SR-only live region for copy / error announcements -->
+      <div id="sr-live" class="sr-only" aria-live="polite"></div>
+    </aside>
+  </main>
+
+  <footer class="page-caption">QuickCopy POC v2 — Spotlight Compass (mocked Marketplace SDK; all state is local)</footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
