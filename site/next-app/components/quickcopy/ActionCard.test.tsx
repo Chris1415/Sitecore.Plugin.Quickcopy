@@ -99,8 +99,11 @@ describe("<ActionCard /> (T017)", () => {
     render(<ActionCard {...baseProps} state="error" />);
     const btn = screen.getByRole("button");
     expect(btn).toHaveAttribute("aria-disabled", "true");
-    // The error state surfaces ❌ glyph or "Failed" label per UI § 5
-    expect(btn.textContent ?? "").toMatch(/❌|Failed/);
+    // The error state surfaces a destructive X glyph (U+2715) AND a "Failed"
+    // label per UI § 5g. ✕ is used instead of ❌ (U+274C) because the latter
+    // renders as a colour emoji bitmap that ignores CSS colour — see
+    // ActionCard.tsx for the rationale.
+    expect(btn.textContent ?? "").toMatch(/✕|Failed/);
   });
 
   it("does NOT call onActivate on click when state='error'", () => {
