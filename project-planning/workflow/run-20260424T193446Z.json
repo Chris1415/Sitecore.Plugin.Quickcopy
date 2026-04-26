@@ -5,7 +5,7 @@
   "updated_at": "2026-04-25T00:00:00Z",
   "product_slug": "quickcopy",
   "product_root": "products/quickcopy",
-  "status": "code_reviewed",
+  "status": "tested",
   "prd_input_mode": "brain_dump_only",
   "platform_target": "marketplace",
   "task_breakdown_style": "tdd",
@@ -48,7 +48,8 @@
     "content_model": null,
     "content_examples": null,
     "ship_report": null,
-    "code_review": "products/quickcopy/project-planning/plans/code-review-20260426T000000Z.md"
+    "code_review": "products/quickcopy/project-planning/plans/code-review-20260426T000000Z.md",
+    "test_report": "products/quickcopy/project-planning/plans/test-report-20260426T000000Z.md"
   },
   "stage_history": [
     {
@@ -120,6 +121,14 @@
       "agent": "08-developer",
       "entered_at": "2026-04-26T00:30:00Z",
       "exited_at": "2026-04-26T01:30:00Z",
+      "outcome": "completed",
+      "error": null
+    },
+    {
+      "stage": "tested",
+      "agent": "07-qa-specialist",
+      "entered_at": "2026-04-26T01:30:00Z",
+      "exited_at": "2026-04-26T03:00:00Z",
       "outcome": "completed",
       "error": null
     }
