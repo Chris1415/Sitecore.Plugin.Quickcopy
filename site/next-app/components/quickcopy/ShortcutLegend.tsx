@@ -14,12 +14,26 @@
  * with five `<li>` children. The dot separators are decorative (`aria-hidden`).
  */
 
-import { SHORTCUTS } from "@/lib/shortcuts/config";
+import { SHORTCUTS, type ShortcutId } from "@/lib/shortcuts/config";
 import { cn } from "@/lib/utils";
 
 export interface ShortcutLegendProps {
   className?: string;
 }
+
+/**
+ * Compact single-word labels for the legend strip — keeps every cell on a
+ * single line at the panel's narrow sidebar width. The long-form label from
+ * `SHORTCUTS` is kept in screen-reader text so accessible names + assertion
+ * tests still see "Live URL", "Preview URL", etc.
+ */
+const COMPACT_LABEL: Record<ShortcutId, string> = {
+  live: "Live",
+  preview: "Preview",
+  item: "Item",
+  title: "Title",
+  share: "Share",
+};
 
 export function ShortcutLegend(props: ShortcutLegendProps) {
   return (
@@ -27,9 +41,6 @@ export function ShortcutLegend(props: ShortcutLegendProps) {
       role="list"
       aria-label="Keyboard shortcuts"
       className={cn(
-        // mt-4 + pt-3 (16px gap, 12px inner) — matches the increased panel
-        // padding and gives the chip row room without colliding with the
-        // share strip rounded edge.
         "mt-4 flex items-center justify-between gap-1 px-1 pt-3",
         "border-t border-border",
         "font-sans text-[10px] text-muted-foreground",
@@ -52,12 +63,14 @@ export function ShortcutLegend(props: ShortcutLegendProps) {
             Alt+{binding.legendKey}
           </kbd>
           <span
+            aria-hidden="true"
             className={cn(
-              "font-sans text-[9px] font-medium uppercase tracking-wide",
+              "whitespace-nowrap font-sans text-[9px] font-medium uppercase tracking-wide",
             )}
           >
-            {binding.label}
+            {COMPACT_LABEL[binding.id]}
           </span>
+          <span className="sr-only">{binding.label}</span>
         </li>
       ))}
     </ul>
