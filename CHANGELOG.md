@@ -2,15 +2,11 @@
 
 All notable changes to QuickCopy are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
-<!--
-  PRD-000 is currently in [Unreleased]. When the /ship stage runs and produces a
-  ship report, this entry will be promoted from `[Unreleased] — PRD-000` to
-  `[PRD-000] — <ship date>`. Do not promote without a ship report.
--->
+## [PRD-000] — 2026-04-26
 
-## [Unreleased] — PRD-000
+**Ship status:** `shipped_with_caveats` — code complete, all automated gates green; manual real-portal smoke (T037 install + T038 in-tenant verification) is the final ship gate before tagging a public release. See [`project-planning/plans/ship-report-20260426T000000Z.md`](project-planning/plans/ship-report-20260426T000000Z.md).
 
-First version of QuickCopy. Pending the manual real-portal smoke (T037 install + T038 in-tenant verification) before promotion to a tagged release.
+First version of QuickCopy.
 
 ### Added
 
