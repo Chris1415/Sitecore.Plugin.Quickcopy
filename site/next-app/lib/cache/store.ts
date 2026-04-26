@@ -7,6 +7,11 @@
  *
  * Pure module — no React imports. Safe to call from server-side code paths
  * (the underlying `Map` initialises eagerly at module load).
+ *
+ * `subscribe(listener)` exposes a tiny pub-sub so React consumers can
+ * re-render when a slot mutates. `useCacheEntry` wires this into
+ * `useSyncExternalStore`. Every mutation (`setEntry` / `patchEntry` /
+ * `clearAll`) bumps a monotonic version counter and notifies listeners.
  */
 
 import type { CacheKey, PageDerivedState } from "./types";
@@ -20,12 +25,42 @@ const FRESH: PageDerivedState = Object.freeze({
   liveUrl: null,
 });
 
+let version = 0;
+const listeners = new Set<() => void>();
+
+function notify(): void {
+  version += 1;
+  for (const l of listeners) l();
+}
+
+/**
+ * Subscribe to cache mutations. Returns an unsubscribe handle. The listener
+ * fires after every `setEntry` / `patchEntry` / `clearAll` — a single
+ * notification per operation, regardless of slot count.
+ */
+export function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+/**
+ * Monotonic version counter. Incremented on every mutation. Stable across
+ * renders that did not see a mutation, so `useSyncExternalStore`'s identity
+ * check yields a no-op re-render only when something actually changed.
+ */
+export function getVersion(): number {
+  return version;
+}
+
 export function getEntry(key: CacheKey): PageDerivedState | undefined {
   return cache.get(key);
 }
 
 export function setEntry(key: CacheKey, state: PageDerivedState): void {
   cache.set(key, state);
+  notify();
 }
 
 /**
@@ -39,8 +74,10 @@ export function patchEntry(
 ): void {
   const existing = cache.get(key) ?? { ...FRESH };
   cache.set(key, { ...existing, ...partial });
+  notify();
 }
 
 export function clearAll(): void {
   cache.clear();
+  notify();
 }

@@ -22,7 +22,7 @@
 
 import type { ClientSDK } from "@sitecore-marketplace-sdk/client";
 
-import { getEntry, setEntry } from "@/lib/cache/store";
+import { setEntry } from "@/lib/cache/store";
 import {
   buildCacheKey,
   type CacheValue,
@@ -192,13 +192,7 @@ export async function prefetchPageUrls(
   // --- Compose liveUrl eagerly ---
   const liveUrl = composeLiveUrl(publishing, liveHost, pageInfo.url);
 
-  // Re-read the slot in case the user navigated away and back to the same
-  // key during the in-flight window — but per ADR-0007 the cache is keyed
-  // by id+version so concurrent navigation is safe; just write the final
-  // resolved state.
-  // (`getEntry` retained for parity with the spec wording; intentional no-op
-  // beyond confirming the slot is reachable.)
-  void getEntry(key);
-
+  // Per ADR-0007 the cache is keyed by id+version so concurrent navigation
+  // is safe — just write the final resolved state.
   setEntry(key, { previewUrl, publishing, liveHost, liveUrl });
 }
