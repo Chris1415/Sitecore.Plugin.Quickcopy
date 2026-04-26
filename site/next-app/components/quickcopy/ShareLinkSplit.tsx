@@ -41,6 +41,8 @@ import { copyTextToClipboard } from "@/lib/clipboard";
 import { useCacheEntry } from "@/lib/cache/useCacheEntry";
 import { usePagesContext } from "@/components/providers/marketplace";
 import { cn } from "@/lib/utils";
+import { useStatusAnnouncer } from "./StatusLiveRegion";
+import { STRINGS } from "@/lib/i18n/strings";
 
 import {
   shareLinkMarkdown,
@@ -73,6 +75,7 @@ export function ShareLinkSplit() {
     [ctx?.pageInfo?.displayName, ctx?.pageInfo?.name],
   );
   const { key: cacheKey, state } = useCacheEntry();
+  const { announce } = useStatusAnnouncer();
 
   const selection = useMemo(() => {
     const fallback = state ?? {
@@ -165,12 +168,14 @@ export function ShareLinkSplit() {
           setMode("idle");
           morphTimerRef.current = null;
         }, COPIED_MS);
+        // SUCCESS-only announcement per ADR-0009 (errors are visual-only).
+        announce(STRINGS.announcements.shareLinkCopied);
       } catch {
         errorKeyRef.current = cacheKey;
         setMode("error");
       }
     },
-    [effectiveDisabled, url, title, cacheKey],
+    [effectiveDisabled, url, title, cacheKey, announce],
   );
 
   const onPrimaryClick = useCallback(() => {

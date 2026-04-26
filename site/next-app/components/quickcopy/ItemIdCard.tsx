@@ -12,11 +12,13 @@
  * missing or empty (post-trim).
  */
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import { ActionCard, type ActionCardState } from "./ActionCard";
 import { usePagesContext } from "@/components/providers/marketplace";
 import { useCopyAction } from "./useCopyAction";
+import { useStatusAnnouncer } from "./StatusLiveRegion";
+import { STRINGS } from "@/lib/i18n/strings";
 
 const TOOLTIP_NOT_READY = "Page context not ready — wait or reload.";
 
@@ -40,7 +42,12 @@ export function ItemIdCard() {
   const rawId = ctx?.pageInfo?.id;
   const id = useMemo(() => normalizeItemId(rawId), [rawId]);
   const cacheKey = id || null;
-  const copy = useCopyAction(id || null, cacheKey);
+  const { announce } = useStatusAnnouncer();
+  const onSuccess = useCallback(
+    () => announce(STRINGS.announcements.itemIdCopied),
+    [announce],
+  );
+  const copy = useCopyAction(id || null, cacheKey, onSuccess);
 
   let cardState: ActionCardState = "idle";
   let tooltip: string | undefined;

@@ -125,12 +125,15 @@ describe("regression audit (T033)", () => {
   it("no setTimeout/setInterval in components/quickcopy/ outside the morph-revert path", () => {
     // The 1500ms `copied` morph revert (FR-008). § 10 T033 explicitly exempts
     // the morph-revert path inside ActionCard.tsx; in this implementation the
-    // timer lives in `useCopyAction.ts` (the card-side morph driver) and
-    // `ShareLinkSplit.tsx` (the strip-side morph driver). Both are the
+    // timer lives in `useCopyAction.ts` (the card-side morph driver),
+    // `ShareLinkSplit.tsx` (the strip-side morph driver), and
+    // `StatusLiveRegion.tsx` (the aria-live success-announcement reset — same
+    // 1500ms revert family, success-only per ADR-0009). All three are the
     // documented "morph-revert path."
     const ALLOWED = new Set([
       "components/quickcopy/useCopyAction.ts",
       "components/quickcopy/ShareLinkSplit.tsx",
+      "components/quickcopy/StatusLiveRegion.tsx",
     ]);
     const files = collectFiles({
       roots: ["components/quickcopy"],

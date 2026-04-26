@@ -9,9 +9,13 @@
  * Agent API field per FR-003. Persistent error per ADR-0009.
  */
 
+import { useCallback } from "react";
+
 import { ActionCard, type ActionCardState } from "./ActionCard";
 import { useCacheEntry } from "@/lib/cache/useCacheEntry";
 import { useCopyAction } from "./useCopyAction";
+import { useStatusAnnouncer } from "./StatusLiveRegion";
+import { STRINGS } from "@/lib/i18n/strings";
 
 const TOOLTIP_LOADING = "Loading…";
 const TOOLTIP_ERROR =
@@ -27,7 +31,12 @@ export function PreviewUrlCard() {
   const { key, state } = useCacheEntry();
   const previewUrl =
     typeof state?.previewUrl === "string" ? state.previewUrl : null;
-  const copy = useCopyAction(previewUrl, key);
+  const { announce } = useStatusAnnouncer();
+  const onSuccess = useCallback(
+    () => announce(STRINGS.announcements.previewUrlCopied),
+    [announce],
+  );
+  const copy = useCopyAction(previewUrl, key, onSuccess);
 
   let cardState: ActionCardState = "idle";
   let tooltip: string | undefined;

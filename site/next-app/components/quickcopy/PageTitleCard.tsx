@@ -9,11 +9,13 @@
  * `displayName` is treated as missing and falls back to `name`.
  */
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import { ActionCard, type ActionCardState } from "./ActionCard";
 import { usePagesContext } from "@/components/providers/marketplace";
 import { useCopyAction } from "./useCopyAction";
+import { useStatusAnnouncer } from "./StatusLiveRegion";
+import { STRINGS } from "@/lib/i18n/strings";
 
 const TOOLTIP_NOT_READY = "Page context not ready — wait or reload.";
 
@@ -34,7 +36,12 @@ export function PageTitleCard() {
     [ctx?.pageInfo?.displayName, ctx?.pageInfo?.name],
   );
   const cacheKey = title || null;
-  const copy = useCopyAction(title || null, cacheKey);
+  const { announce } = useStatusAnnouncer();
+  const onSuccess = useCallback(
+    () => announce(STRINGS.announcements.pageTitleCopied),
+    [announce],
+  );
+  const copy = useCopyAction(title || null, cacheKey, onSuccess);
 
   let cardState: ActionCardState = "idle";
   let tooltip: string | undefined;

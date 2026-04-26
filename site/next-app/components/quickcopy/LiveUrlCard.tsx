@@ -17,9 +17,13 @@
  * when cache key changes).
  */
 
+import { useCallback } from "react";
+
 import { ActionCard, type ActionCardState } from "./ActionCard";
 import { useCacheEntry } from "@/lib/cache/useCacheEntry";
 import { useCopyAction } from "./useCopyAction";
+import { useStatusAnnouncer } from "./StatusLiveRegion";
+import { STRINGS } from "@/lib/i18n/strings";
 
 const TOOLTIP_LOADING = "Loading…";
 const TOOLTIP_UNPUBLISHED =
@@ -36,7 +40,12 @@ const isError = (slot: unknown): boolean =>
 export function LiveUrlCard() {
   const { key, state } = useCacheEntry();
   const liveUrl = typeof state?.liveUrl === "string" ? state.liveUrl : null;
-  const copy = useCopyAction(liveUrl, key);
+  const { announce } = useStatusAnnouncer();
+  const onSuccess = useCallback(
+    () => announce(STRINGS.announcements.liveUrlCopied),
+    [announce],
+  );
+  const copy = useCopyAction(liveUrl, key, onSuccess);
 
   let cardState: ActionCardState = "idle";
   let tooltip: string | undefined;

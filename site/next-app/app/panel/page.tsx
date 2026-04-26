@@ -17,13 +17,15 @@
  * minimal-coupling activation primitive. `Alt+S` clicks the primary share
  * button (Markdown default per ADR-0010) — never the caret.
  *
- * Phase 4 (T034 + T036) will add `<StatusLiveRegion>` and the integration
- * tests at this file's level. We leave a comment marker for that.
+ * Phase 4 (T034) wires `<StatusLiveRegion>` at the panel root. Each card and
+ * the share-link split-button call `useStatusAnnouncer().announce(...)` on
+ * SUCCESSFUL copy only — errors are visual-only per ADR-0009.
  */
 
 import { ActionGrid } from "@/components/quickcopy/ActionGrid";
 import { ShareLinkSplit } from "@/components/quickcopy/ShareLinkSplit";
 import { ShortcutLegend } from "@/components/quickcopy/ShortcutLegend";
+import { StatusLiveRegion } from "@/components/quickcopy/StatusLiveRegion";
 import { ThemeToggle } from "@/components/quickcopy/ThemeToggle";
 import { useShortcuts, type ShortcutHandlers } from "@/hooks/useShortcuts";
 
@@ -85,7 +87,7 @@ export default function QuickCopyPanelRoute() {
 
       <ShortcutsBinding />
 
-      {/* Phase 4 (T034b) inserts <StatusLiveRegion /> here. */}
+      <StatusLiveRegion />
     </main>
   );
 }
