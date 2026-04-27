@@ -2,6 +2,10 @@
 
 A Sitecore Marketplace Page Context Panel app that gives marketers and content authors one-click copy buttons for the five pieces of page metadata they paste most often.
 
+![QuickCopy panel inside the Sitecore Pages editor — five copy buttons, Share Link split-button, theme toggle, and shortcut legend](./docs/screenshots/quickcopy-pages-panel.png)
+
+*QuickCopy installed as a Page Context Panel, shown alongside the editor canvas. Dark theme, live page selected.*
+
 ## What this project does
 
 QuickCopy lives inside the Sitecore Pages editor as a right-hand context panel. While a marketer is editing or reviewing a page, the panel surfaces five copy actions that match the data they actually paste into Slack, Teams, Jira, email, or release notes:
