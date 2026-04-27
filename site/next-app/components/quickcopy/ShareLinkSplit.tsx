@@ -45,8 +45,10 @@ import { useStatusAnnouncer } from "./StatusLiveRegion";
 import { STRINGS } from "@/lib/i18n/strings";
 
 import {
+  shareLinkHtml,
   shareLinkMarkdown,
   shareLinkPlainText,
+  shareLinkSlack,
 } from "@/lib/share-link/formats";
 import { getShareLinkUrl } from "@/lib/share-link/select-url";
 
@@ -57,6 +59,20 @@ const TOOLTIP_ERROR =
 const COPIED_MS = 1500;
 
 type Mode = "idle" | "copied" | "error";
+type ShareKind = "md" | "plain" | "slack" | "html";
+
+function formatShareText(kind: ShareKind, title: string, url: string): string {
+  switch (kind) {
+    case "md":
+      return shareLinkMarkdown(title, url);
+    case "plain":
+      return shareLinkPlainText(title, url);
+    case "slack":
+      return shareLinkSlack(title, url);
+    case "html":
+      return shareLinkHtml(title, url);
+  }
+}
 
 function resolveTitle(
   displayName: string | undefined | null,
@@ -154,12 +170,9 @@ export function ShareLinkSplit() {
   }, [open]);
 
   const doCopy = useCallback(
-    async (kind: "md" | "plain") => {
+    async (kind: ShareKind) => {
       if (effectiveDisabled || !url) return;
-      const text =
-        kind === "md"
-          ? shareLinkMarkdown(title, url)
-          : shareLinkPlainText(title, url);
+      const text = formatShareText(kind, title, url);
       try {
         await copyTextToClipboard(text);
         setMode("copied");
@@ -198,14 +211,18 @@ export function ShareLinkSplit() {
   }, []);
 
   const onMenuItemClick = useCallback(
-    (kind: "md" | "plain") => {
+    (kind: ShareKind) => {
       setOpen(false);
       void doCopy(kind);
     },
     [doCopy],
   );
 
-  const primaryLabel = mode === "copied" ? "Copied" : "Share Link";
+  // Visible label: idle → "Share Link", success → "Copied", error → "Failed".
+  // The shortcut chip "S" stays visible through every state so the bar is
+  // never an empty pastel block.
+  const primaryLabel =
+    mode === "copied" ? "Copied" : effectiveError ? "Failed" : "Share Link";
   // aria-label is stable across the `copied` morph window so the panel-level
   // `Alt+S` shortcut (which dispatches a synthetic click via aria-label
   // substring match) keeps working even while the visible label flips to
@@ -219,9 +236,15 @@ export function ShareLinkSplit() {
       aria-label="Share link"
       data-quickcopy="share-link-split"
       className={cn(
-        "relative mx-2 mt-3 flex overflow-hidden rounded-lg",
-        "bg-primary text-primary-foreground",
-        mode === "copied" && "shadow-[inset_0_0_0_2px_hsl(var(--primary-foreground)/0.4)]",
+        "relative mt-3 flex overflow-hidden rounded-lg",
+        // Blok scaffold quirk: in dark mode `--primary-foreground` resolves
+        // to the same value as `--primary` (both `color-primary-200`), so
+        // `text-primary-foreground` is invisible on `bg-primary`. We use
+        // `text-background` instead — guaranteed contrast in BOTH themes
+        // (light: primary-500 purple bg / white text · dark: primary-200
+        // pastel bg / gray-800 text). All inner controls follow suit.
+        "bg-primary text-background",
+        mode === "copied" && "shadow-[inset_0_0_0_2px_hsl(var(--background)/0.4)]",
       )}
     >
       <button
@@ -233,9 +256,9 @@ export function ShareLinkSplit() {
         onClick={onPrimaryClick}
         className={cn(
           "flex flex-1 items-center gap-2 border-0 bg-transparent px-3 py-2.5",
-          "font-sans text-[13px] font-semibold text-primary-foreground",
-          "outline-none focus-visible:outline-2 focus-visible:outline-primary-foreground focus-visible:[outline-offset:-2px]",
-          "hover:bg-[hsl(var(--primary-foreground)/0.08)]",
+          "font-sans text-[13px] font-semibold text-background",
+          "outline-none focus-visible:outline-2 focus-visible:outline-background focus-visible:[outline-offset:-2px]",
+          "hover:bg-[hsl(var(--background)/0.12)]",
           effectiveDisabled && "cursor-not-allowed opacity-70",
         )}
       >
@@ -245,7 +268,7 @@ export function ShareLinkSplit() {
         <span className="flex-1 text-center">{primaryLabel}</span>
         <span
           aria-hidden="true"
-          className="rounded border border-[hsl(var(--primary-foreground)/0.3)] bg-[hsl(var(--primary-foreground)/0.18)] px-[5px] py-[3px] font-mono text-[10px] font-medium leading-none text-primary-foreground"
+          className="rounded border border-[hsl(var(--background)/0.3)] bg-[hsl(var(--background)/0.18)] px-[5px] py-[3px] font-mono text-[10px] font-medium leading-none text-background"
         >
           S
         </span>
@@ -260,10 +283,10 @@ export function ShareLinkSplit() {
         aria-disabled={effectiveDisabled || undefined}
         onClick={onCaretClick}
         className={cn(
-          "w-9 border-0 border-l border-[hsl(var(--primary-foreground)/0.25)] bg-transparent",
-          "font-mono text-[14px] text-primary-foreground",
-          "outline-none focus-visible:outline-2 focus-visible:outline-primary-foreground focus-visible:[outline-offset:-2px]",
-          "hover:bg-[hsl(var(--primary-foreground)/0.08)]",
+          "w-9 border-0 border-l border-[hsl(var(--background)/0.25)] bg-transparent",
+          "font-mono text-[14px] text-background",
+          "outline-none focus-visible:outline-2 focus-visible:outline-background focus-visible:[outline-offset:-2px]",
+          "hover:bg-[hsl(var(--background)/0.12)]",
           effectiveDisabled && "cursor-not-allowed opacity-70",
         )}
       >
@@ -291,6 +314,22 @@ export function ShareLinkSplit() {
             className="block w-full rounded px-2.5 py-2 text-left font-sans text-[12px] font-medium text-foreground hover:bg-muted focus:bg-muted focus:outline-none"
           >
             Copy as Markdown
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => onMenuItemClick("slack")}
+            className="block w-full rounded px-2.5 py-2 text-left font-sans text-[12px] font-medium text-foreground hover:bg-muted focus:bg-muted focus:outline-none"
+          >
+            Copy as Slack mrkdwn
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => onMenuItemClick("html")}
+            className="block w-full rounded px-2.5 py-2 text-left font-sans text-[12px] font-medium text-foreground hover:bg-muted focus:bg-muted focus:outline-none"
+          >
+            Copy as HTML anchor
           </button>
           <button
             type="button"

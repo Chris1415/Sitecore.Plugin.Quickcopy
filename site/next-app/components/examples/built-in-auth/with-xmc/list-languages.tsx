@@ -47,10 +47,8 @@ export const ListLanguagesFromClientSdk = () => {
       const languagesResponse = await client.query("xmc.sites.listLanguages", {
         params: data,
       });
-      console.log("languages from client", languagesResponse);
       setLanguages(languagesResponse.data?.data ?? []);
     } catch (err) {
-      console.log("error from client", err);
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setLoading(false);

@@ -65,19 +65,22 @@ export default function QuickCopyPanelRoute() {
   return (
     <main
       data-quickcopy="panel"
-      className="relative mx-auto flex w-[320px] flex-col bg-background px-3 py-3 text-foreground"
+      // Full-bleed: stretch to the iframe width, keep generous vertical
+      // padding (16px top/bottom) but trim horizontal padding (8px) so the
+      // grid + share strip feel edge-to-edge in the Sitecore Pages right rail.
+      className="relative flex w-full flex-col bg-background px-2 py-4 text-foreground"
     >
-      <header className="flex items-center justify-between">
+      <header className="flex h-7 items-center justify-between">
         <span
           aria-label="QuickCopy"
-          className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-foreground/85"
+          className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] leading-none text-foreground/85"
         >
           QUICKCOPY
         </span>
         <ThemeToggle />
       </header>
 
-      <div className="mt-3">
+      <div className="mt-4">
         <ActionGrid />
       </div>
 

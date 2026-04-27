@@ -14,12 +14,26 @@
  * with five `<li>` children. The dot separators are decorative (`aria-hidden`).
  */
 
-import { SHORTCUTS } from "@/lib/shortcuts/config";
+import { SHORTCUTS, type ShortcutId } from "@/lib/shortcuts/config";
 import { cn } from "@/lib/utils";
 
 export interface ShortcutLegendProps {
   className?: string;
 }
+
+/**
+ * Compact single-word labels for the legend strip — keeps every cell on a
+ * single line at the panel's narrow sidebar width. The long-form label from
+ * `SHORTCUTS` is kept in screen-reader text so accessible names + assertion
+ * tests still see "Live URL", "Preview URL", etc.
+ */
+const COMPACT_LABEL: Record<ShortcutId, string> = {
+  live: "Live",
+  preview: "Preview",
+  item: "Item",
+  title: "Title",
+  share: "Share",
+};
 
 export function ShortcutLegend(props: ShortcutLegendProps) {
   return (
@@ -27,17 +41,17 @@ export function ShortcutLegend(props: ShortcutLegendProps) {
       role="list"
       aria-label="Keyboard shortcuts"
       className={cn(
-        "flex items-center justify-between gap-1.5 px-2 pt-2.5 mt-3",
+        "mt-4 flex items-center justify-between gap-1 px-1 pt-3",
         "border-t border-border",
         "font-sans text-[10px] text-muted-foreground",
         props.className,
       )}
     >
-      {SHORTCUTS.map((binding, index) => (
+      {SHORTCUTS.map((binding) => (
         <li
           key={binding.id}
           data-testid="shortcut-legend-chip"
-          className="flex flex-1 items-center justify-center gap-1.5"
+          className="flex flex-1 flex-col items-center gap-1"
         >
           <kbd
             className={cn(
@@ -49,17 +63,14 @@ export function ShortcutLegend(props: ShortcutLegendProps) {
             Alt+{binding.legendKey}
           </kbd>
           <span
+            aria-hidden="true"
             className={cn(
-              "font-sans text-[9px] font-medium uppercase tracking-wide",
+              "whitespace-nowrap font-sans text-[9px] font-medium uppercase tracking-wide",
             )}
           >
-            {binding.label}
+            {COMPACT_LABEL[binding.id]}
           </span>
-          {index < SHORTCUTS.length - 1 ? (
-            <span aria-hidden="true" className="text-[10px] opacity-50 ml-1.5">
-              ·
-            </span>
-          ) : null}
+          <span className="sr-only">{binding.label}</span>
         </li>
       ))}
     </ul>

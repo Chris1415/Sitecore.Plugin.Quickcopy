@@ -102,7 +102,6 @@ describe("<LiveUrlCard /> (T018)", () => {
   });
 
   it.each([
-    ["previewUrl", { previewUrl: errorVal() }],
     ["publishing", { publishing: errorVal() }],
     ["liveHost", { liveHost: errorVal() }],
   ])(
@@ -119,6 +118,22 @@ describe("<LiveUrlCard /> (T018)", () => {
       );
     },
   );
+
+  it("does NOT enter error state when previewUrl alone is in error (slots are independent per ADR-0006)", () => {
+    // Polish micro-run regression: a Preview URL fetch failure must not
+    // cascade into the Live URL card. Live URL composition depends only on
+    // `publishing` + `liveHost`. With both healthy and `liveUrl` resolved,
+    // the card stays interactive even if `previewUrl` errored.
+    cacheState({
+      previewUrl: errorVal(),
+      publishing: { isPublished: true },
+      liveHost: "https://www.example.com",
+      liveUrl: "https://www.example.com/products/spring",
+    });
+    render(<LiveUrlCard />);
+    const btn = screen.getByRole("button");
+    expect(btn).not.toHaveAttribute("aria-disabled", "true");
+  });
 
   it("renders disabled with Loading… tooltip when all slots are null", () => {
     cacheState({});

@@ -49,11 +49,15 @@ export function ThemeToggle(props: ThemeToggleProps) {
       onClick={toggle}
       onKeyDown={onKeyDown}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1",
-        "border border-border bg-muted text-foreground",
+        // Pill sized to feel anchored to the wordmark, not floating: tighter
+        // 1px vertical padding and a token-tinted muted bg so it reads as a
+        // peer of the QUICKCOPY label. Hover + focus visible against the
+        // dark panel bg.
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-[3px]",
+        "border border-border bg-muted/60 text-foreground",
         "font-sans text-[11px] font-medium leading-none",
         "transition-[background-color,border-color,color] duration-150",
-        "hover:border-[hsl(var(--primary)/0.4)]",
+        "hover:border-[hsl(var(--primary)/0.45)] hover:bg-muted",
         "outline-none focus-visible:outline-2 focus-visible:outline-ring focus-visible:[outline-offset:2px]",
         "cursor-pointer",
         props.className,

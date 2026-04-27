@@ -1,10 +1,11 @@
 /**
- * T013a — RED tests for `prefetchPageUrls`.
+ * Tests for `prefetchPageUrls`.
  *
- * Spec source: task-breakdown § 10 / B-026..B-033 + § 4c-6.
- *
- * The orchestrator does not yet exist — every test fails with "module not
- * found" until T013b lands.
+ * Spec source: task-breakdown § 10 / B-026..B-033 + § 4c-6 + ADR-0006.
+ * Mock fixtures use the REAL SDK envelopes derived from the
+ * `@sitecore-marketplace-sdk/xmc` declared types — not the invented
+ * double-wrap + `kind: "delivery"` shapes that v0.1 GA shipped with.
+ * See `project-planning/plans/diagnostic-2026-04-26-real-tenant-url-failures.md`.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -42,8 +43,50 @@ function buildClient(handlers: Record<string, () => Promise<unknown>>): {
       }
       return handler();
     });
-  // Cast through unknown so we don't bring the full ClientSDK shape in.
   return { client: { query: query as unknown as MockClientLike["query"] }, calls };
+}
+
+// --- Real SDK envelope fixtures (single-wrap per @hey-api/client-fetch) ---
+
+/** `{ data: Agent.GetPagePreviewUrlResponse, request, response }` */
+function previewOk(previewUrl: string) {
+  return async () => ({
+    data: { pageId: "page-1", previewUrl },
+  });
+}
+
+/**
+ * `{ data: Pages.Page, request, response }` — only the fields prefetch reads
+ * (publishing flags + url) are populated.
+ */
+function pageOk(opts: {
+  hasPublishableVersion?: boolean;
+  isPublishable?: boolean;
+  url?: string;
+}) {
+  return async () => ({
+    data: {
+      publishing: {
+        hasPublishableVersion: opts.hasPublishableVersion,
+        isPublishable: opts.isPublishable,
+      },
+      url: opts.url,
+    },
+  });
+}
+
+/** `{ data: Sites.Host[], request, response }` */
+function hostsOk(targetHostname: string) {
+  return async () => ({
+    data: [
+      {
+        id: "host-1",
+        name: "marketing",
+        hostnames: [targetHostname],
+        targetHostname,
+      },
+    ],
+  });
 }
 
 const PAGE_INFO = {
@@ -55,7 +98,7 @@ const PAGE_INFO = {
 const SITE_INFO = { id: "site-1", name: "marketing", language: "en" };
 const CTX = "ctx-live";
 
-describe("prefetchPageUrls (T013)", () => {
+describe("prefetchPageUrls", () => {
   beforeEach(() => {
     clearAll();
   });
@@ -66,32 +109,15 @@ describe("prefetchPageUrls (T013)", () => {
 
   it("issues exactly three SDK queries with the correct keys + params", async () => {
     const { client, calls } = buildClient({
-      "xmc.agent.pagesGetPagePreviewUrl": async () => ({
-        data: { data: "https://preview.example.com/foo" },
+      "xmc.agent.pagesGetPagePreviewUrl": previewOk("https://preview.example.com/foo"),
+      "xmc.pages.retrievePage": pageOk({
+        hasPublishableVersion: true,
+        isPublishable: true,
       }),
-      "xmc.pages.retrievePage": async () => ({
-        data: {
-          data: {
-            publishing: {
-              hasPublishableVersion: true,
-              isPublishable: true,
-            },
-          },
-        },
-      }),
-      "xmc.sites.listHosts": async () => ({
-        data: {
-          data: [{ kind: "delivery", hostName: "www.example.com" }],
-        },
-      }),
+      "xmc.sites.listHosts": hostsOk("www.example.com"),
     });
 
-    await prefetchPageUrls(
-      client as never,
-      CTX,
-      PAGE_INFO,
-      SITE_INFO,
-    );
+    await prefetchPageUrls(client as never, CTX, PAGE_INFO, SITE_INFO);
 
     const keys = calls.map((c) => c.key).sort();
     expect(keys).toEqual([
@@ -123,23 +149,15 @@ describe("prefetchPageUrls (T013)", () => {
     });
   });
 
-  it("happy path — composes liveUrl from delivery host and slug", async () => {
+  it("happy path — composes liveUrl from targetHostname + page slug", async () => {
     const { client } = buildClient({
-      "xmc.agent.pagesGetPagePreviewUrl": async () => ({
-        data: { data: "https://preview.example.com/foo" },
+      "xmc.agent.pagesGetPagePreviewUrl": previewOk("https://preview.example.com/foo"),
+      "xmc.pages.retrievePage": pageOk({
+        hasPublishableVersion: true,
+        isPublishable: true,
+        url: "/products/spring",
       }),
-      "xmc.pages.retrievePage": async () => ({
-        data: {
-          data: {
-            publishing: { hasPublishableVersion: true, isPublishable: true },
-          },
-        },
-      }),
-      "xmc.sites.listHosts": async () => ({
-        data: {
-          data: [{ kind: "delivery", hostName: "www.example.com" }],
-        },
-      }),
+      "xmc.sites.listHosts": hostsOk("www.example.com"),
     });
 
     await prefetchPageUrls(client as never, CTX, PAGE_INFO, SITE_INFO);
@@ -151,23 +169,31 @@ describe("prefetchPageUrls (T013)", () => {
     expect(slot.liveUrl).toBe("https://www.example.com/products/spring");
   });
 
+  it("falls back to pageInfo.url when retrievePage omits .url", async () => {
+    const { client } = buildClient({
+      "xmc.agent.pagesGetPagePreviewUrl": previewOk("https://preview.example.com/foo"),
+      "xmc.pages.retrievePage": pageOk({
+        hasPublishableVersion: true,
+        isPublishable: true,
+        // url undefined — slug should fall back to pageInfo.url
+      }),
+      "xmc.sites.listHosts": hostsOk("www.example.com"),
+    });
+
+    await prefetchPageUrls(client as never, CTX, PAGE_INFO, SITE_INFO);
+
+    const slot = getEntry("page-1:2") as PageDerivedState;
+    expect(slot.liveUrl).toBe("https://www.example.com/products/spring");
+  });
+
   it("publishing.hasPublishableVersion=false → liveUrl null, isPublished false", async () => {
     const { client } = buildClient({
-      "xmc.agent.pagesGetPagePreviewUrl": async () => ({
-        data: { data: "https://preview.example.com/foo" },
+      "xmc.agent.pagesGetPagePreviewUrl": previewOk("https://preview.example.com/foo"),
+      "xmc.pages.retrievePage": pageOk({
+        hasPublishableVersion: false,
+        isPublishable: true,
       }),
-      "xmc.pages.retrievePage": async () => ({
-        data: {
-          data: {
-            publishing: { hasPublishableVersion: false, isPublishable: true },
-          },
-        },
-      }),
-      "xmc.sites.listHosts": async () => ({
-        data: {
-          data: [{ kind: "delivery", hostName: "www.example.com" }],
-        },
-      }),
+      "xmc.sites.listHosts": hostsOk("www.example.com"),
     });
 
     await prefetchPageUrls(client as never, CTX, PAGE_INFO, SITE_INFO);
@@ -179,19 +205,12 @@ describe("prefetchPageUrls (T013)", () => {
 
   it("publishing.isPublishable=false → liveUrl null, isPublished false", async () => {
     const { client } = buildClient({
-      "xmc.agent.pagesGetPagePreviewUrl": async () => ({
-        data: { data: "https://preview.example.com/foo" },
+      "xmc.agent.pagesGetPagePreviewUrl": previewOk("https://preview.example.com/foo"),
+      "xmc.pages.retrievePage": pageOk({
+        hasPublishableVersion: true,
+        isPublishable: false,
       }),
-      "xmc.pages.retrievePage": async () => ({
-        data: {
-          data: {
-            publishing: { hasPublishableVersion: true, isPublishable: false },
-          },
-        },
-      }),
-      "xmc.sites.listHosts": async () => ({
-        data: { data: [{ kind: "delivery", hostName: "www.example.com" }] },
-      }),
+      "xmc.sites.listHosts": hostsOk("www.example.com"),
     });
 
     await prefetchPageUrls(client as never, CTX, PAGE_INFO, SITE_INFO);
@@ -203,15 +222,10 @@ describe("prefetchPageUrls (T013)", () => {
 
   it("xmc.sites.listHosts rejects → liveHost is { error }; preview/publishing still resolve", async () => {
     const { client } = buildClient({
-      "xmc.agent.pagesGetPagePreviewUrl": async () => ({
-        data: { data: "https://preview.example.com/foo" },
-      }),
-      "xmc.pages.retrievePage": async () => ({
-        data: {
-          data: {
-            publishing: { hasPublishableVersion: true, isPublishable: true },
-          },
-        },
+      "xmc.agent.pagesGetPagePreviewUrl": previewOk("https://preview.example.com/foo"),
+      "xmc.pages.retrievePage": pageOk({
+        hasPublishableVersion: true,
+        isPublishable: true,
       }),
       "xmc.sites.listHosts": async () => {
         throw new Error("network down");
@@ -232,16 +246,11 @@ describe("prefetchPageUrls (T013)", () => {
       "xmc.agent.pagesGetPagePreviewUrl": async () => {
         throw new Error("nope");
       },
-      "xmc.pages.retrievePage": async () => ({
-        data: {
-          data: {
-            publishing: { hasPublishableVersion: true, isPublishable: true },
-          },
-        },
+      "xmc.pages.retrievePage": pageOk({
+        hasPublishableVersion: true,
+        isPublishable: true,
       }),
-      "xmc.sites.listHosts": async () => ({
-        data: { data: [{ kind: "delivery", hostName: "www.example.com" }] },
-      }),
+      "xmc.sites.listHosts": hostsOk("www.example.com"),
     });
 
     await prefetchPageUrls(client as never, CTX, PAGE_INFO, SITE_INFO);
@@ -272,19 +281,13 @@ describe("prefetchPageUrls (T013)", () => {
 
   it("liveUrl composition for slug '/'", async () => {
     const { client } = buildClient({
-      "xmc.agent.pagesGetPagePreviewUrl": async () => ({
-        data: { data: "https://preview.example.com/" },
+      "xmc.agent.pagesGetPagePreviewUrl": previewOk("https://preview.example.com/"),
+      "xmc.pages.retrievePage": pageOk({
+        hasPublishableVersion: true,
+        isPublishable: true,
+        url: "/",
       }),
-      "xmc.pages.retrievePage": async () => ({
-        data: {
-          data: {
-            publishing: { hasPublishableVersion: true, isPublishable: true },
-          },
-        },
-      }),
-      "xmc.sites.listHosts": async () => ({
-        data: { data: [{ kind: "delivery", hostName: "www.example.com" }] },
-      }),
+      "xmc.sites.listHosts": hostsOk("www.example.com"),
     });
 
     await prefetchPageUrls(
@@ -299,17 +302,12 @@ describe("prefetchPageUrls (T013)", () => {
 
   it("listHosts returns empty array → liveHost is { error: 'no live host' }", async () => {
     const { client } = buildClient({
-      "xmc.agent.pagesGetPagePreviewUrl": async () => ({
-        data: { data: "https://preview.example.com/foo" },
+      "xmc.agent.pagesGetPagePreviewUrl": previewOk("https://preview.example.com/foo"),
+      "xmc.pages.retrievePage": pageOk({
+        hasPublishableVersion: true,
+        isPublishable: true,
       }),
-      "xmc.pages.retrievePage": async () => ({
-        data: {
-          data: {
-            publishing: { hasPublishableVersion: true, isPublishable: true },
-          },
-        },
-      }),
-      "xmc.sites.listHosts": async () => ({ data: { data: [] } }),
+      "xmc.sites.listHosts": async () => ({ data: [] }),
     });
 
     await prefetchPageUrls(client as never, CTX, PAGE_INFO, SITE_INFO);
@@ -319,5 +317,50 @@ describe("prefetchPageUrls (T013)", () => {
       error: expect.objectContaining({ message: "no live host" }),
     });
     expect(slot.liveUrl).toBeNull();
+  });
+
+  it("falls back to hostnames[0] when targetHostname is absent", async () => {
+    const { client } = buildClient({
+      "xmc.agent.pagesGetPagePreviewUrl": previewOk("https://preview.example.com/foo"),
+      "xmc.pages.retrievePage": pageOk({
+        hasPublishableVersion: true,
+        isPublishable: true,
+      }),
+      "xmc.sites.listHosts": async () => ({
+        data: [
+          {
+            id: "host-1",
+            name: "marketing",
+            hostnames: ["www.fallback.example.com", "alt.example.com"],
+            // targetHostname intentionally omitted
+          },
+        ],
+      }),
+    });
+
+    await prefetchPageUrls(client as never, CTX, PAGE_INFO, SITE_INFO);
+
+    const slot = getEntry("page-1:2") as PageDerivedState;
+    expect(slot.liveHost).toBe("https://www.fallback.example.com");
+  });
+
+  it("preview-url returns empty string → previewUrl is { error: 'preview-url empty' }", async () => {
+    const { client } = buildClient({
+      "xmc.agent.pagesGetPagePreviewUrl": async () => ({
+        data: { pageId: "page-1", previewUrl: "" },
+      }),
+      "xmc.pages.retrievePage": pageOk({
+        hasPublishableVersion: true,
+        isPublishable: true,
+      }),
+      "xmc.sites.listHosts": hostsOk("www.example.com"),
+    });
+
+    await prefetchPageUrls(client as never, CTX, PAGE_INFO, SITE_INFO);
+
+    const slot = getEntry("page-1:2") as PageDerivedState;
+    expect(slot.previewUrl).toMatchObject({
+      error: expect.objectContaining({ message: "preview-url empty" }),
+    });
   });
 });

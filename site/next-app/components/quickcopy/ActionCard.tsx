@@ -93,8 +93,14 @@ export function ActionCard(props: ActionCardProps) {
   };
 
   // Visible glyph + label depend on state (per UI § 5).
+  // Error glyph: ✕ (U+2715 HEAVY MULTIPLICATION X) — a TEXT glyph that obeys
+  // `color: hsl(var(--destructive))`. The previous ❌ (U+274C) is a color
+  // emoji that browsers render as a built-in red square + white X bitmap,
+  // ignoring CSS color and producing a "full-bleed red" look that dominated
+  // the destructive ring + Failed label. ✕ keeps the visual semantic (an X
+  // crossing out the action) while honoring Blok semantic-token colour.
   const visibleGlyph =
-    state === "copied" ? "✓" : state === "error" ? "❌" : glyph;
+    state === "copied" ? "✓" : state === "error" ? "✕" : glyph;
   const visibleLabel =
     state === "copied" ? "Copied" : state === "error" ? "Failed" : label;
 

@@ -107,8 +107,7 @@ export const MarketplaceProvider: React.FC<ClientSDKProviderProps> = ({
         setLoading(true);
         const created = await ClientSDK.init(config);
         setClient(created);
-      } catch (err) {
-        console.error("Error initializing client SDK", err);
+      } catch {
         setError("Error initializing client SDK");
       } finally {
         setLoading(false);
@@ -147,11 +146,10 @@ export const MarketplaceProvider: React.FC<ClientSDKProviderProps> = ({
             setPagesCtx(event);
           }
         },
-        onError: (err: unknown) => {
+        onError: () => {
           // Per ADR-0009 we keep the last successful payload visible — the
           // per-button error states are the user-facing surface, not the
           // Provider state.
-          console.error("[quickcopy][pages.context]", err);
         },
       })
       .then((res) => {
@@ -194,8 +192,7 @@ export const MarketplaceProvider: React.FC<ClientSDKProviderProps> = ({
     let contextId: string;
     try {
       contextId = requireContextId(appContext);
-    } catch (err) {
-      console.error("[quickcopy][prefetch] cannot resolve context id", err);
+    } catch {
       return;
     }
 

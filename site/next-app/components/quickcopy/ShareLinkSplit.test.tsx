@@ -228,7 +228,7 @@ describe("<ShareLinkSplit /> (T025)", () => {
     );
   });
 
-  it("renders exactly two menu items with role=menuitem", async () => {
+  it("renders four menu items with role=menuitem (Markdown / Slack mrkdwn / HTML anchor / Plain text)", async () => {
     setup({
       cacheState: {
         liveUrl: "https://live",
@@ -246,7 +246,14 @@ describe("<ShareLinkSplit /> (T025)", () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    expect(screen.getAllByRole("menuitem")).toHaveLength(2);
+    const items = screen.getAllByRole("menuitem");
+    expect(items).toHaveLength(4);
+    expect(items.map((el) => el.textContent)).toEqual([
+      "Copy as Markdown",
+      "Copy as Slack mrkdwn",
+      "Copy as HTML anchor",
+      "Copy as Plain text",
+    ]);
   });
 
   it("renders the unpublished tooltip when liveUrl is null but previewUrl is healthy", () => {
@@ -282,6 +289,23 @@ describe("<ShareLinkSplit /> (T025)", () => {
     });
     expect(primary).toHaveAttribute("aria-disabled", "true");
     expect(caret).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("renders 'Failed' as the visible primary label when both URLs error (never an empty bar)", () => {
+    setup({
+      cacheState: {
+        liveUrl: null,
+        previewUrl: errorVal(),
+        publishing: errorVal(),
+        liveHost: errorVal(),
+      },
+    });
+    render(<ShareLinkSplit />);
+    const primary = document.querySelector('[data-quickcopy="share-link-primary"]') as HTMLButtonElement;
+    expect(primary.textContent ?? "").toMatch(/Failed/);
+    // Shortcut chip "S" stays visible across every state so the strip is
+    // never an empty coloured block.
+    expect(primary.textContent ?? "").toMatch(/S/);
   });
 
   it("renders the persistent error tooltip on the primary when both URLs error", () => {
