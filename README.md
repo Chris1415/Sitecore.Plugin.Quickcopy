@@ -107,6 +107,16 @@ The exact registration values (App name, Extension point, Route URL, API access 
 
 After installing into a tenant, run the manual smoke checklist at `site/next-app/SMOKE_TEST.md`. It walks through nine sections — panel render, all five buttons on a published page, disabled state on an unpublished page, persistent error state, theme toggle and persistence, keyboard shortcuts, the Share Link dropdown, console hygiene, and a Chrome/Edge/Safari/Firefox browser matrix.
 
+## Backend prerequisite — `targetHostname`
+
+The Live URL (and the Markdown / plain-text Share Link when the page is published) is composed as `https://<targetHostname><page.url>`. The `targetHostname` value comes from XM Cloud:
+
+> Sitecore XM Cloud → **Sites** → *(your site)* → **Hosts** → **Target hostname**
+
+QuickCopy reads this value via `xmc.sites.listHosts`. **It does not write it.** If `targetHostname` is left blank on a host record, the API may return a placeholder (e.g. `example.com` from the OpenAPI sample), which produces a Live URL that does not point at the real public site. Set `targetHostname` to the real CDN / Edge hostname (e.g. `www.dogfeeding.com`, `xmc-…sitecorecloud.io`) before relying on the Live URL or the Share Link's live variant.
+
+If multiple hosts exist QuickCopy picks the first one with a non-empty `targetHostname`; if none have one it falls back to the first non-empty entry of `hostnames[]`. Order the hosts so the canonical delivery host comes first.
+
 ## Links
 
 - [CHANGELOG.md](./CHANGELOG.md)

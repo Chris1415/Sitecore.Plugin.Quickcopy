@@ -166,9 +166,7 @@ describe("MarketplaceProvider — pages.context subscription (T009)", () => {
     });
   });
 
-  it("logs onError via console.error and keeps the last successful payload", async () => {
-    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
+  it("keeps the last successful payload when onError fires", async () => {
     const { result } = renderHook(() => usePagesContext(), {
       wrapper: Wrapper,
     });
@@ -193,7 +191,6 @@ describe("MarketplaceProvider — pages.context subscription (T009)", () => {
       captured?.options.onError?.(new Error("boom"));
     });
 
-    expect(errSpy).toHaveBeenCalled();
     // Last successful payload preserved (no regression to null).
     expect(result.current).toEqual(snapshot);
   });

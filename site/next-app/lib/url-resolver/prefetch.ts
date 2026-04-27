@@ -65,14 +65,23 @@ const FRESH: PageDerivedState = {
 };
 
 /**
- * The hey-api/client-fetch envelope: every SDK call lands as
- * `{ data?: TData, error?: TError, request, response }`. We only need
- * the resolved `data` payload here — `error` is surfaced by Promise rejection.
+ * The Marketplace `client.query(...)` resolves to a wrapper whose `.data` is
+ * the underlying hey-api/client-fetch result: `{ data?: TData, request, response }`.
+ * Net effect: the actual payload sits at `value.data.data` (double-unwrap).
+ * The previous single-unwrap was a misread of the SDK type — verified by the
+ * 2026-04-27 real-tenant diagnostic logs, where `value.data` was the hey-api
+ * envelope, not the payload.
  */
-type SdkResult<TData> = { data?: TData };
+type SdkResult<TData> = {
+  data?: { data?: TData } | TData;
+};
 
 function readData<TData>(value: unknown): TData | undefined {
-  return (value as SdkResult<TData> | undefined)?.data;
+  const outer = (value as SdkResult<TData> | undefined)?.data;
+  if (outer && typeof outer === "object" && "data" in (outer as object)) {
+    return (outer as { data?: TData }).data;
+  }
+  return outer as TData | undefined;
 }
 
 /**
@@ -80,6 +89,14 @@ function readData<TData>(value: unknown): TData | undefined {
  * delivery hostname per the SDK examples), falls back to the first entry of
  * `hostnames[]`, then to the first non-empty hostname across the whole array.
  * Returns `{ error }` only when nothing usable is found.
+ *
+ * IMPORTANT — backend setup requirement:
+ *   `targetHostname` must be set on the Site's host record in XM Cloud
+ *   (Sites → <site> → Hosts → Target hostname) so that this function returns
+ *   the real public delivery hostname. If it's left blank, `xmc.sites.listHosts`
+ *   may return a placeholder hostname (e.g. `example.com` from the OpenAPI
+ *   sample), which produces a Live URL that does NOT point at the real site.
+ *   The Sitecore admin owns this — QuickCopy reads, it does not write.
  */
 function pickLiveHost(hosts: Sites.Host[]): string | { error: Error } {
   if (!Array.isArray(hosts) || hosts.length === 0) {
@@ -138,36 +155,76 @@ export async function prefetchPageUrls(
   // `undefined` while the queries are in flight.
   setEntry(key, { ...FRESH });
 
+  const previewParams = {
+    params: {
+      path: { pageId },
+      query: { sitecoreContextId: contextId },
+    },
+  };
+  const pageParams = {
+    params: {
+      path: { pageId },
+      query: {
+        site: siteInfo.name,
+        language: pageInfo.language ?? siteInfo.language ?? "en",
+        sitecoreContextId: contextId,
+      },
+    },
+  };
+  const hostsParams = {
+    params: {
+      path: { siteId: siteInfo.id },
+      query: { sitecoreContextId: contextId },
+    },
+  };
+
+  // DIAG-2026-04-27: REMOVE after fix — L5 (request configs going to SDK).
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[qc:preview] L5 request", {
+      key,
+      preview: previewParams,
+      page: pageParams,
+      hosts: hostsParams,
+    });
+  }
+
   const [previewRes, pageRes, hostsRes] = await Promise.allSettled([
-    client.query("xmc.agent.pagesGetPagePreviewUrl", {
-      params: {
-        path: { pageId },
-        query: { sitecoreContextId: contextId },
-      },
-    } as never),
-    client.query("xmc.pages.retrievePage", {
-      params: {
-        path: { pageId },
-        query: {
-          site: siteInfo.name,
-          language: pageInfo.language ?? siteInfo.language ?? "en",
-          sitecoreContextId: contextId,
-        },
-      },
-    } as never),
-    client.query("xmc.sites.listHosts", {
-      params: {
-        path: { siteId: siteInfo.id },
-        query: { sitecoreContextId: contextId },
-      },
-    } as never),
+    client.query("xmc.agent.pagesGetPagePreviewUrl", previewParams as never),
+    client.query("xmc.pages.retrievePage", pageParams as never),
+    client.query("xmc.sites.listHosts", hostsParams as never),
   ]);
+
+  // DIAG-2026-04-27: REMOVE after fix — L6 (raw envelopes / rejection reasons).
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[qc:preview] L6 settled", {
+      preview:
+        previewRes.status === "fulfilled"
+          ? { status: "fulfilled", value: previewRes.value }
+          : { status: "rejected", reason: previewRes.reason },
+      page:
+        pageRes.status === "fulfilled"
+          ? { status: "fulfilled", value: pageRes.value }
+          : { status: "rejected", reason: pageRes.reason },
+      hosts:
+        hostsRes.status === "fulfilled"
+          ? { status: "fulfilled", value: hostsRes.value }
+          : { status: "rejected", reason: hostsRes.reason },
+    });
+  }
 
   // --- Preview URL ---
   let previewUrl: CacheValue<string>;
   if (previewRes.status === "fulfilled") {
     const payload = readData<Agent.GetPagePreviewUrlResponse>(previewRes.value);
     const url = payload?.previewUrl;
+    // DIAG-2026-04-27: REMOVE after fix — L7 (extracted preview payload).
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[qc:preview] L7 extracted", {
+        payload,
+        urlType: typeof url,
+        urlLength: typeof url === "string" ? url.length : null,
+      });
+    }
     previewUrl =
       typeof url === "string" && url.length > 0
         ? url
@@ -215,5 +272,10 @@ export async function prefetchPageUrls(
 
   // Per ADR-0007 the cache is keyed by id+version so concurrent navigation
   // is safe — just write the final resolved state.
-  setEntry(key, { previewUrl, publishing, liveHost, liveUrl });
+  const finalState = { previewUrl, publishing, liveHost, liveUrl };
+  // DIAG-2026-04-27: REMOVE after fix — L8 (final cache write the cards see).
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[qc:preview] L8 setEntry", { key, state: finalState });
+  }
+  setEntry(key, finalState);
 }

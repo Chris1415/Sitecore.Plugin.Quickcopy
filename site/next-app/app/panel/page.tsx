@@ -65,11 +65,10 @@ export default function QuickCopyPanelRoute() {
   return (
     <main
       data-quickcopy="panel"
-      // p-4 (16px) per UI § 2 spatial table — gives the header breathing
-      // room from the iframe edge and the legend from the bottom edge.
-      // Prior `px-3 py-3` (12px) felt cramped in the real Sitecore Pages
-      // right rail.
-      className="relative mx-auto flex w-[320px] flex-col bg-background p-4 text-foreground"
+      // Full-bleed: stretch to the iframe width, keep generous vertical
+      // padding (16px top/bottom) but trim horizontal padding (8px) so the
+      // grid + share strip feel edge-to-edge in the Sitecore Pages right rail.
+      className="relative flex w-full flex-col bg-background px-2 py-4 text-foreground"
     >
       <header className="flex h-7 items-center justify-between">
         <span
