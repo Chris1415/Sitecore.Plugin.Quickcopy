@@ -1,4 +1,6 @@
-# QuickCopy
+# <img src="https://hachweb.wordpress.com/wp-content/uploads/2025/08/2022-05-03-09_10_13-receipt-stickerapp-removebg-preview.png" alt="Hahn-Solo logo" height="40" align="center" /> QuickCopy
+
+**Author:** [Christian Hahn](https://www.linkedin.com/in/christian-hahn-solo/) — _Technical Product Manager DevEx & SDKs @ Sitecore_
 
 A Sitecore Marketplace Page Context Panel app that gives marketers and content authors one-click copy buttons for the five pieces of page metadata they paste most often.
 
