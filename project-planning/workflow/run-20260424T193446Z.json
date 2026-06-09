@@ -1,4 +1,4 @@
-{
+﻿{
   "schema_version": 3,
   "run_id": "20260424T193446Z",
   "created_at": "2026-04-24T19:34:46Z",
@@ -13,15 +13,15 @@
     "proposal_count": 4,
     "divergence": "moderate",
     "variant_paths": [
-      "products/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v1.md",
-      "products/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v2.md",
-      "products/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v3.md",
-      "products/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v4.md"
+      "products/marketplace/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v1.md",
+      "products/marketplace/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v2.md",
+      "products/marketplace/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v3.md",
+      "products/marketplace/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v4.md"
     ],
-    "selected_variant_path": "products/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v2.md",
-    "selected_poc_path": "products/quickcopy/pocs/poc-v2",
+    "selected_variant_path": "products/marketplace/quickcopy/project-planning/ui-design/ui-design-20260424T193446Z-v2.md",
+    "selected_poc_path": "products/marketplace/quickcopy/pocs/poc-v2",
     "history": [
-      "First pair (v1 Compact Utilitarian / v2 Spacious & Expressive) rejected by stakeholder — too boring.",
+      "First pair (v1 Compact Utilitarian / v2 Spacious & Expressive) rejected by stakeholder â€” too boring.",
       "Second iteration: v1 redesigned as Page Card Hub (editorial), v2 redesigned as Spotlight Compass (geometric). v2 chosen as winning direction but requested strict-Blok refit (Geist Sans + Geist Mono, semantic tokens only).",
       "Third iteration: v2 refit to strict Blok; v3 Action Wheel and v4 Content-Forward Stack added as alternative directions for final comparison."
     ]
@@ -29,7 +29,7 @@
   "source": {
     "kind": "raw_idea",
     "values": [
-      "Quick Copy URL / Path / ID — Sitecore Marketplace Page Context Panel app with buttons for copying the most-shared page metadata. Backlog entry in storage/marketplace-app-ideas.md shortlist #1."
+      "Quick Copy URL / Path / ID â€” Sitecore Marketplace Page Context Panel app with buttons for copying the most-shared page metadata. Backlog entry in storage/marketplace-app-ideas.md shortlist #1."
     ],
     "analysis_mode": "greenfield",
     "source_analysis_artifact": null,
@@ -37,19 +37,19 @@
     "assets_bundle": null
   },
   "canonical_artifacts": {
-    "brain_dump": "products/quickcopy/project-planning/brain-dumps/brain-dump-20260424T193446Z.md",
-    "prd": "products/quickcopy/project-planning/PRD/prd-000.md",
-    "prd_minimal": "products/quickcopy/project-planning/PRD/prd-minimal-000.md",
+    "brain_dump": "products/marketplace/quickcopy/project-planning/brain-dumps/brain-dump-20260424T193446Z.md",
+    "prd": "products/marketplace/quickcopy/project-planning/PRD/prd-000.md",
+    "prd_minimal": "products/marketplace/quickcopy/project-planning/PRD/prd-minimal-000.md",
     "architecture": null,
-    "task_breakdown": "products/quickcopy/project-planning/plans/task-breakdown-20260424T193446Z.md",
+    "task_breakdown": "products/marketplace/quickcopy/project-planning/plans/task-breakdown-20260424T193446Z.md",
     "task_breakdown_pre_qa": null,
     "qa_report": null,
-    "implementation_runbook": "products/quickcopy/project-planning/plans/implementation-runbook-20260424T193446Z.md",
+    "implementation_runbook": "products/marketplace/quickcopy/project-planning/plans/implementation-runbook-20260424T193446Z.md",
     "content_model": null,
     "content_examples": null,
-    "ship_report": "products/quickcopy/project-planning/plans/ship-report-20260426T000000Z.md",
-    "code_review": "products/quickcopy/project-planning/plans/code-review-20260426T000000Z.md",
-    "test_report": "products/quickcopy/project-planning/plans/test-report-20260426T000000Z.md"
+    "ship_report": "products/marketplace/quickcopy/project-planning/plans/ship-report-20260426T000000Z.md",
+    "code_review": "products/marketplace/quickcopy/project-planning/plans/code-review-20260426T000000Z.md",
+    "test_report": "products/marketplace/quickcopy/project-planning/plans/test-report-20260426T000000Z.md"
   },
   "stage_history": [
     {
@@ -151,21 +151,21 @@
   ],
   "implementation": {
     "mode": "pipeline",
-    "target_directory": "products/quickcopy/site",
+    "target_directory": "products/marketplace/quickcopy/site",
     "branch_name": "prd-000",
     "remote_url": "https://github.com/Chris1415/Sitecore.Plugin.Quickcopy.git",
     "status": "shipped_with_caveats",
     "resumed_from_stage": null
   },
   "notes": [
-    "Marketplace Page Context Panel app (xmc:pages:contextpanel). Blok UI, dark default + theme switcher. 5 buttons: Live URL, Preview URL, Item ID, Page Title, Share Link (split-button: Markdown default, dropdown for Plain text). Keyboard shortcuts + visible legend. No toasts — button morphs on copy. Persistent error state until pageInfo.id changes.",
+    "Marketplace Page Context Panel app (xmc:pages:contextpanel). Blok UI, dark default + theme switcher. 5 buttons: Live URL, Preview URL, Item ID, Page Title, Share Link (split-button: Markdown default, dropdown for Plain text). Keyboard shortcuts + visible legend. No toasts â€” button morphs on copy. Persistent error state until pageInfo.id changes.",
     "discovery: completed (rubber-ducky + PM)",
-    "critical_review: partial — Round 1 delivered (Problem / Goals / Scope). Stakeholder accepted scope answers, declined Problem/Goals challenges as overkill for a dogfood app, declined Round 2 (User Stories / FRs). Scope answers folded into PRD: full 5-button scope unconditional, R-001 Live URL ships in v0.1, clipboard = local copy in QuickCopy with no pageshot refactor (ADR-0004).",
+    "critical_review: partial â€” Round 1 delivered (Problem / Goals / Scope). Stakeholder accepted scope answers, declined Problem/Goals challenges as overkill for a dogfood app, declined Round 2 (User Stories / FRs). Scope answers folded into PRD: full 5-button scope unconditional, R-001 Live URL ships in v0.1, clipboard = local copy in QuickCopy with no pageshot refactor (ADR-0004).",
     "Backlog entry: storage/marketplace-app-ideas.md shortlist #1 (screenshot previously #2 moved to Shipped).",
     "ADRs created during /create-prd: 0002 (extension point), 0003 (Blok UI), 0004 (clipboard local-copy).",
-    "planning_track: minimal — no architecture blueprint file written (canonical_artifacts.architecture stays null).",
+    "planning_track: minimal â€” no architecture blueprint file written (canonical_artifacts.architecture stays null).",
     "ADRs created during /architect (minimal track): 0005 (Marketplace Client-Side scaffold + pageshot mirror), 0006 (Live URL parallel pre-fetch composition), 0007 (version-keyed cache, no TTL), 0008 (Alt+L/P/I/T/S provisional shortcuts + Ctrl+Alt fallback), 0009 (persistent error state, no retry), 0010 (Share Link composed from Blok Button+DropdownMenu).",
-    "Open Questions resolved by architect: OQ-001 (shortcuts → ADR-0008), OQ-002 (split-button keyboard → ADR-0010), OQ-006 (cache invalidation → ADR-0007). OQ-003 / OQ-004 / OQ-005 / OQ-008 still open (UX writing / UI design / v0.2 deferral).",
-    "UI design selected: v2 Spotlight Compass (geometric / modern; asymmetric 2x2 grid + bottom Share Link strip; Blok-primary gradient mesh atmosphere). Strict-Blok refit verified: Geist Sans + Geist Mono only (Blok Nova preset), semantic tokens only (97 hsl(var(--token)) references in styles.css), zero raw hex, zero non-Blok fonts. POC at products/quickcopy/pocs/poc-v2/ is the canonical visual source of truth for implementation."
+    "Open Questions resolved by architect: OQ-001 (shortcuts â†’ ADR-0008), OQ-002 (split-button keyboard â†’ ADR-0010), OQ-006 (cache invalidation â†’ ADR-0007). OQ-003 / OQ-004 / OQ-005 / OQ-008 still open (UX writing / UI design / v0.2 deferral).",
+    "UI design selected: v2 Spotlight Compass (geometric / modern; asymmetric 2x2 grid + bottom Share Link strip; Blok-primary gradient mesh atmosphere). Strict-Blok refit verified: Geist Sans + Geist Mono only (Blok Nova preset), semantic tokens only (97 hsl(var(--token)) references in styles.css), zero raw hex, zero non-Blok fonts. POC at products/marketplace/quickcopy/pocs/poc-v2/ is the canonical visual source of truth for implementation."
   ]
 }
