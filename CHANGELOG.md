@@ -2,6 +2,23 @@
 
 All notable changes to QuickCopy are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
+## [FRD-001] — 2026-06-20
+
+**Ship status:** `shipped_with_caveats` — all five FRD acceptance criteria delivered and test-covered; real-tenant host-frame smoke deferred (no live tenant in the autonomous run). See [`project-planning/plans/ship-report-20260620T122930Z.md`](project-planning/plans/ship-report-20260620T122930Z.md).
+
+Picks up the ADR-0006 deferred "low-risk follow-up": a short debounce on the panel's URL prefetch so rapid page-to-page navigation no longer fires three SDK calls per transient page.
+
+### Delivered
+
+- **~200 ms trailing-edge debounce on the prefetch trigger** — `components/providers/marketplace.tsx` wraps the existing `prefetchPageUrls(...)` dispatch (inside the `pageInfo.id`/version/siteId cache-key effect) in a `setTimeout(PREFETCH_DEBOUNCE_MS)`, cleared on effect cleanup/unmount. Rapidly switching across N pages now collapses to a single settled prefetch trio (the page the user lands on), instead of up to 3×N calls.
+- **Single tunable constant** — `PREFETCH_DEBOUNCE_MS = 200` (one place to retune).
+- **Cache, invalidation, and SDK call shapes untouched** — back/forward to an already-fetched id still resolves from cache with zero new calls; version-keyed invalidation (ADR-0007) unchanged; a settled page still resolves copy / live / share.
+- **3 new tests** in `components/providers/marketplace.prefetch.test.tsx` (collapse-to-one with last-id-wins, settled-single-page still fires once, unmount-mid-window cancels the pending fetch). Suite: 24 files / 179 tests pass.
+
+### Deferred
+
+- **Real-tenant host-frame / live-walkthrough smoke** — requires a live tenant + Cloud Portal host URL not available in the autonomous run. Run the panel in Cloud Portal to confirm far fewer SDK calls under rapid navigation, a settled page still resolves all slots, and the ~200 ms feel; then flip `smoke_outcomes.host_frame_smoke` to `passed`.
+
 ## [PRD-000 cycle 2 — design-polish-1] — 2026-04-27
 
 **Ship status:** `shipped` — real-tenant smoke passing for URL composition once the operator populates `targetHostname` per host record. See [`project-planning/plans/ship-report-20260427T124015Z.md`](project-planning/plans/ship-report-20260427T124015Z.md).
