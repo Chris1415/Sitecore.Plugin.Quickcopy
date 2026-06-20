@@ -71,6 +71,15 @@ export interface QuickCopyPagesContext {
   };
 }
 
+/**
+ * FRD-001 — debounce window (ms) applied to the prefetch trio on cache-key
+ * change. ADR-0006's "Harder" section flagged this as a low-risk follow-up:
+ * rapid page-to-page navigation otherwise fires three SDK calls per transient
+ * page. Trailing-edge debounce so only the page the user *settles* on issues
+ * its trio. Single tunable constant per FRD AC4 — change here to retune.
+ */
+const PREFETCH_DEBOUNCE_MS = 200;
+
 const ClientSDKContext = createContext<ClientSDK | null>(null);
 const AppContextContext = createContext<ApplicationContext | null>(null);
 const PagesContextContext = createContext<QuickCopyPagesContext | null>(null);
@@ -178,6 +187,12 @@ export const MarketplaceProvider: React.FC<ClientSDKProviderProps> = ({
   // back-navigation hits the cache and version bumps automatically refresh.
   // The click handlers in the action cards are synchronous cache reads — no
   // fetch on click.
+  //
+  // FRD-001 — the prefetch dispatch is DEBOUNCED (~200 ms, trailing edge): on
+  // each cache-key change we schedule a timer and the effect cleanup clears
+  // the previous one, so rapid page-to-page navigation collapses to a single
+  // prefetch trio for the page the user settles on. Cache invalidation,
+  // keying, and the prefetch itself are unchanged — only WHEN it fires.
   useEffect(() => {
     if (!client || !appContext) return;
     const pageId = pagesCtx?.pageInfo?.id;
@@ -186,7 +201,9 @@ export const MarketplaceProvider: React.FC<ClientSDKProviderProps> = ({
 
     const key = buildCacheKey(pageId, pagesCtx?.pageInfo?.version);
     if (getEntry(key)) {
-      return; // cache hit; back-nav or dedupe under StrictMode double-mount
+      return; // cache hit; back-nav or dedupe under StrictMode double-mount.
+      // Note: a cache hit short-circuits BEFORE scheduling, so an
+      // already-fetched id (back/forward) never even arms a timer.
     }
 
     let contextId: string;
@@ -198,7 +215,17 @@ export const MarketplaceProvider: React.FC<ClientSDKProviderProps> = ({
 
     const pageInfo = pagesCtx?.pageInfo ?? {};
     const siteInfo = pagesCtx?.siteInfo ?? {};
-    void prefetchPageUrls(client, contextId, pageInfo, siteInfo);
+
+    // Trailing-edge debounce: defer the trio so transient pages skipped
+    // through within the window never fire. The cleanup clears this timer on
+    // the next cache-key change or on unmount, cancelling a pending fetch.
+    const timerId = setTimeout(() => {
+      void prefetchPageUrls(client, contextId, pageInfo, siteInfo);
+    }, PREFETCH_DEBOUNCE_MS);
+
+    return () => {
+      clearTimeout(timerId);
+    };
     // Intentional: re-run only when the cache key inputs change. Capturing
     // the full `pagesCtx` object would re-fire on every re-render even when
     // id/version/siteId are stable.

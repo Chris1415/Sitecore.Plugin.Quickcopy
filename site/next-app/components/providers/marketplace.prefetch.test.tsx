@@ -245,3 +245,132 @@ describe("MarketplaceProvider — prefetch wiring (T014, T015)", () => {
     });
   });
 });
+
+/**
+ * FRD-001 / T001 — RED tests for the prefetch debounce.
+ *
+ * Spec: frd-001.md § 3 (AC1, AC2) + task-breakdown-20260620T122930Z.md
+ * § 10. These assert that rapid `pageInfo.id` changes within the debounce
+ * window collapse to ONE settled prefetch trio (for the LAST id), that a
+ * settled single page still fires exactly once, and that an unmount mid-window
+ * cancels the pending timer.
+ *
+ * These use Vitest fake timers so the test controls the ~200 ms debounce
+ * clock rather than waiting wall-clock. They FAIL until T002 wraps the
+ * prefetch dispatch in a debounced `setTimeout` — today each distinct id
+ * fires immediately (N calls, not 1).
+ *
+ * The debounce window constant is intentionally NOT imported from the
+ * Provider — these tests advance by a value comfortably larger than the
+ * default (200 ms) so they stay correct if the constant is tuned upward
+ * within reason.
+ */
+describe("MarketplaceProvider — prefetch debounce (FRD-001 / T001)", () => {
+  // A value safely past the default 200 ms debounce window. Advancing by this
+  // flushes a trailing-edge timer regardless of minor tuning.
+  const PAST_WINDOW_MS = 1000;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    // Drain any leftover timers, then hand the clock back to real time so
+    // the real-timer describe block above is unaffected.
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  /**
+   * `waitFor` under fake timers cannot rely on the real event loop, so we
+   * flush React's microtask queue + advance the fake clock together inside
+   * `act`. Repeated a few times to let chained effects settle.
+   */
+  async function flush(advanceMs = 0) {
+    await act(async () => {
+      if (advanceMs > 0) {
+        await vi.advanceTimersByTimeAsync(advanceMs);
+      } else {
+        await vi.advanceTimersByTimeAsync(0);
+      }
+    });
+  }
+
+  it("collapses rapid distinct id changes to ONE settled prefetch (last id wins)", async () => {
+    render(
+      <MarketplaceProvider>
+        <div>child</div>
+      </MarketplaceProvider>,
+    );
+
+    // The init + subscription effects resolve via awaited promises; flush
+    // microtasks under the fake clock until the subscription is captured.
+    await vi.waitFor(() => expect(captured).toBeDefined());
+
+    // Fire three DISTINCT page ids in quick succession, all within the window.
+    act(() => {
+      captured?.options.onSuccess?.(SNAPSHOT(2, "page-A"));
+    });
+    act(() => {
+      captured?.options.onSuccess?.(SNAPSHOT(2, "page-B"));
+    });
+    act(() => {
+      captured?.options.onSuccess?.(SNAPSHOT(2, "page-C"));
+    });
+
+    // Before the window elapses, no prefetch should have fired (debounced).
+    await flush(0);
+    expect(prefetchSpy).not.toHaveBeenCalled();
+
+    // Advance past the window: exactly one settled prefetch — for the LAST id.
+    await flush(PAST_WINDOW_MS);
+
+    expect(prefetchSpy).toHaveBeenCalledTimes(1);
+    const args = prefetchSpy.mock.calls[0]!;
+    expect((args[2] as { id?: string }).id).toBe("page-C");
+  });
+
+  it("still fires exactly once for a settled single page after the window", async () => {
+    render(
+      <MarketplaceProvider>
+        <div>child</div>
+      </MarketplaceProvider>,
+    );
+    await vi.waitFor(() => expect(captured).toBeDefined());
+
+    act(() => {
+      captured?.options.onSuccess?.(SNAPSHOT(2));
+    });
+
+    await flush(PAST_WINDOW_MS);
+
+    expect(prefetchSpy).toHaveBeenCalledTimes(1);
+    expect((prefetchSpy.mock.calls[0]![2] as { id?: string }).id).toBe(
+      "page-1",
+    );
+  });
+
+  it("cancels the pending prefetch when the Provider unmounts mid-window", async () => {
+    const { unmount } = render(
+      <MarketplaceProvider>
+        <div>child</div>
+      </MarketplaceProvider>,
+    );
+    await vi.waitFor(() => expect(captured).toBeDefined());
+
+    act(() => {
+      captured?.options.onSuccess?.(SNAPSHOT(2));
+    });
+
+    // Unmount BEFORE the debounce window elapses.
+    act(() => {
+      unmount();
+    });
+
+    // Advancing past the window must NOT fire a prefetch into a torn-down
+    // Provider — the pending timer was cleared on unmount.
+    await flush(PAST_WINDOW_MS);
+
+    expect(prefetchSpy).not.toHaveBeenCalled();
+  });
+});
