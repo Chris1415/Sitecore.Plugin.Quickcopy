@@ -1,40 +1,11 @@
 /**
- * T033 — Regression audit (test-only).
+ * Regression audit — walks the production source tree and asserts five
+ * contracts are still held. Each contract's reasoning is in
+ * docs/build-decisions.md#no-retry; the assertions below are the enforcement.
  *
- * Source of truth: § 10 T033 + ADR-0009 + ADR-0003 + § 4c-1.
- *
- * Vitest tests that walk the production source tree via `node:fs` and assert
- * forbidden patterns are absent. The audit encodes five contracts:
- *
- *  1. **No `setTimeout` / `setInterval` outside the documented morph-revert
- *     path.** ADR-0009 forbids retry / backoff. The 1500ms "Copied" morph
- *     revert is the ONLY allowed timer in `components/quickcopy/` and lives
- *     in `useCopyAction.ts` (cards) and `ShareLinkSplit.tsx` (share strip).
- *     `lib/url-resolver/` must contain zero timers.
- *  2. **No `retry` keyword in production CODE.** Reading our error code paths
- *     should never reveal a retry concept. Comments and tests are excluded —
- *     the audit strips line/block comments before scanning so doc strings
- *     that explicitly disclaim "no auto-retry" don't trip the audit.
- *  3. **No `aria-live` outside `StatusLiveRegion.tsx`.** ADR-0009 mandates
- *     errors are visual-only — there must be no error-state aria-live region.
- *     Comments are excluded for the same reason as (2).
- *  4. **No `as string` / `as any` casts in production code on SDK return
- *     values** (§ 4c-1 + `client.md § 8a / § 12g`). Note: `as never` casts
- *     on the SDK-call **request payload** in `prefetch.ts` are an
- *     established Phase-1 workaround for the narrow generic on
- *     `client.query` and are not a return-value cast. The audit therefore
- *     forbids `as string` and `as any` outright but does not flag `as never`
- *     — the latter is gated by a separate rule below restricted to call
- *     SITES on `xmc.*` results (zero such call sites today).
- *  5. **No raw hex outside `globals.css`.** ADR-0003 — Blok semantic tokens
- *     are the only color surface. Raw hex must live in the `:root` / `.dark`
- *     token block of `globals.css` and nowhere else. Comments are excluded.
- *
- * The audit is intentionally simple — readdirSync + readFileSync + string
- * scans on a comment-stripped view. It does not need a real lexer; the goal
- * is regression detection at the same fidelity as the manual greps in § 10.
+ * Comments are stripped before scanning, so a doc string that disclaims
+ * "no auto-retry" does not trip the audit that forbids retry.
  */
-
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";

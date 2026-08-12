@@ -1,31 +1,11 @@
 "use client";
 
 /**
- * T025b — `<ShareLinkSplit>` — Share Link split-button.
- *
- * Source of truth: ADR-0010 + FR-005 + § 4c-4 + § 4c-6 + § 4c-8 + § 10 (T025).
- *
- * Composition:
- *  - `role="group" aria-label="Share link"` wraps two adjacent buttons.
- *  - Primary "Share Link" button — copies the default Markdown shape.
- *  - Caret button with `aria-haspopup="menu"` + `aria-expanded` — opens
- *    a `role="menu"` with two `role="menuitem"` entries:
- *      1. "Copy as Markdown"   → `[<title>](<url>)`
- *      2. "Copy as Plain text" → `<title> <U+2014> <url>`
- *  - On menu open: focus first menu item.
- *  - Escape closes the menu AND restores focus to the caret.
- *  - Outside click closes the menu (no focus restoration).
- *
- * State sync:
- *  - "Page not live — link points to preview" tooltip when liveUrl is null
- *    AND previewUrl resolved (per US-005).
- *  - Persistent error per ADR-0009 when both URLs unrecoverable —
- *    `aria-disabled="true"` on BOTH primary AND caret; clicks are no-ops.
- *
- * Morph:
- *  - Successful copy → "Copied" label for 1500ms (FR-008). The strip-shaped
- *    morph (no rotation, scale 1.02) per UI § 5e is implemented as a
- *    transient label swap; further visual polish lives behind a CSS class.
+ * Share split-button: a primary copy action plus a caret menu offering
+ * Markdown and plain-text shapes. Escape closes and restores focus to the
+ * caret; an outside click closes without restoring. When both URLs are
+ * unrecoverable BOTH halves go `aria-disabled` —
+ * see docs/build-decisions.md#aria-disabled.
  */
 
 import {
