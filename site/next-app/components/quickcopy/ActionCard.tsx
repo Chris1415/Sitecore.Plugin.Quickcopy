@@ -1,29 +1,13 @@
 "use client";
 
 /**
- * T017b — `<ActionCard>` Blok-composed reusable card primitive.
+ * Blok-composed action card, five states: idle / copied / disabled / error.
+ * Disabled and error use `aria-disabled`, never `disabled`, so the control
+ * stays focusable and its tooltip is reachable —
+ * see docs/build-decisions.md#aria-disabled.
  *
- * Source of truth: task-breakdown § 4c-4 (visual states) + § 10 (T017a) +
- * ADR-0009 (persistent error) + UI § 5 (interaction states).
- *
- * Composes a Blok ghost button + Geist Mono glyph + Geist Sans label +
- * Kbd shortcut chip into a square 2x2 cell. Five states:
- *  - `idle`     — clickable, primary glyph
- *  - `copied`   — morph "Copied" label, glyph swap to ✓ — held 1500ms by caller
- *  - `disabled` — hatched overlay, `aria-disabled` (NOT `disabled`), tooltip
- *  - `error`    — inset destructive ring, ❌ + "Failed", `aria-disabled`,
- *                  tooltip carries the reason. Persistent per ADR-0009.
- *
- * The component does NOT manage the morph timer itself — owners do (per
- * card spec). It also does NOT make SDK calls — `onActivate` is the only
- * outbound side effect.
- *
- * Accessibility:
- *  - Disabled & error states use `aria-disabled="true"` (focusable for tooltip).
- *  - Click + Enter + Space all invoke `onActivate` while idle.
- *  - `tooltip` prop renders a hidden sibling element with `id`, wired via
- *    `aria-describedby`.
- *  - `prefers-reduced-motion: reduce` strips the rotation/scale morph class.
+ * The card owns no morph timer (callers do) and makes no SDK calls —
+ * `onActivate` is its only outbound side effect.
  */
 
 import { useId, useSyncExternalStore } from "react";

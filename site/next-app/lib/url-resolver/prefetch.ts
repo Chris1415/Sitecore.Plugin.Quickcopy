@@ -1,37 +1,14 @@
 "use client";
 
 /**
- * Parallel pre-fetch orchestrator.
+ * Parallel pre-fetch orchestrator: three queries via `Promise.allSettled` on
+ * pageInfo.id change, each slot failing independently. Click handlers are
+ * synchronous cache reads — see docs/build-decisions.md#prefetch-isolation.
  *
- * Source of truth: ADR-0006 (parallel pre-fetch on pageInfo.id change) +
- * ADR-0007 (version-keyed cache, no TTL). Response shapes are derived from the
- * `@sitecore-marketplace-sdk/xmc` declared types (Agent / Pages / Sites
- * namespaces in `node_modules/@sitecore-marketplace-sdk/xmc/dist/xmc/src/`)
- * — NOT from the agent skill catalogue, which doesn't document response
- * envelopes. The QuickCopy v0.1 GA build had this wrong (assumed double-wrapped
- * `{ data: { data: T } }` envelopes and invented host fields like
- * `kind: "delivery"`/`hostName` that don't exist on the real `Sites.Host`
- * type). Diagnostic post-mortem:
- * `project-planning/plans/diagnostic-2026-04-26-real-tenant-url-failures.md`.
- *
- * The hey-api client-fetch envelope is:
- *
- *     { data: TData | undefined, error?: TError, request, response }
- *
- * where `TData` is exactly the SDK response type (`Agent.GetPagePreviewUrlResponse`,
- * `Pages.Page`, `Sites.Host[]`). Single-level unwrap.
- *
- * Issues three parallel queries via `Promise.allSettled`:
- *   - `xmc.agent.pagesGetPagePreviewUrl` → `{ pageId, previewUrl }`
- *   - `xmc.pages.retrievePage`           → `Pages.Page` (reads `publishing.{hasPublishableVersion,isPublishable}` + `url`)
- *   - `xmc.sites.listHosts`              → `Sites.Host[]` (reads `targetHostname` || `hostnames[0]`)
- *
- * Composes `liveUrl` eagerly when `publishing.isPublished === true` AND a host
- * resolves. Click handlers are synchronous cache reads — no fetch on click.
- *
- * Failures are isolated per slot — a failing `listHosts` does NOT corrupt
- * `previewUrl`. Per ADR-0009 the failed slot stays `{ error }` until the cache
- * key changes (id or version bump).
+ * The hey-api envelope is a SINGLE-level unwrap; the v0.1 build assumed a
+ * double wrap and invented host fields that do not exist —
+ * docs/build-decisions.md#sdk-envelope.
+ * source: node_modules/@sitecore-marketplace-sdk/xmc/dist/xmc/src/
  */
 
 import type { ClientSDK } from "@sitecore-marketplace-sdk/client";
